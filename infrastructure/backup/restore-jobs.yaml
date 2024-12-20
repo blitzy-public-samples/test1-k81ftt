@@ -1,0 +1,317 @@
+# Kubernetes Job configurations for enterprise-grade system component restoration
+# Version: v1.25+
+# Purpose: Define restore jobs for database, file storage, and Redis cache components
+
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: database-full-restore
+  labels:
+    app: task-management
+    component: backup
+    type: restore
+spec:
+  parallelism: 1
+  completions: 1
+  backoffLimit: 3
+  activeDeadlineSeconds: 7200
+  template:
+    metadata:
+      labels:
+        app: task-management
+        component: backup
+        type: restore
+    spec:
+      securityContext:
+        runAsUser: 999
+        runAsGroup: 999
+        fsGroup: 999
+        privileged: false
+        allowPrivilegeEscalation: false
+        readOnlyRootFilesystem: true
+      containers:
+      - name: db-restore
+        image: postgres:14-alpine
+        securityContext:
+          capabilities:
+            drop: ["ALL"]
+            add: ["NET_BIND_SERVICE"]
+        command: ["/scripts/restore.sh"]
+        args: ["database", "full"]
+        env:
+        - name: AZURE_STORAGE_ACCOUNT
+          valueFrom:
+            secretKeyRef:
+              name: backup-credentials
+              key: storage-account
+        - name: AZURE_STORAGE_CONTAINER
+          valueFrom:
+            secretKeyRef:
+              name: backup-credentials
+              key: storage-container
+        - name: DB_HOST
+          valueFrom:
+            configMapKeyRef:
+              name: db-config
+              key: host
+        - name: DB_NAME
+          valueFrom:
+            configMapKeyRef:
+              name: db-config
+              key: database
+        - name: DB_USER
+          valueFrom:
+            secretKeyRef:
+              name: db-credentials
+              key: username
+        resources:
+          requests:
+            cpu: "500m"
+            memory: "1Gi"
+          limits:
+            cpu: "2"
+            memory: "4Gi"
+        volumeMounts:
+        - name: restore-storage
+          mountPath: /restore
+        - name: restore-scripts
+          mountPath: /scripts
+          readOnly: true
+      volumes:
+      - name: restore-storage
+        persistentVolumeClaim:
+          claimName: restore-storage-pvc
+      - name: restore-scripts
+        configMap:
+          name: restore-scripts
+          defaultMode: 0500
+      restartPolicy: Never
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: database-point-in-time-restore
+  labels:
+    app: task-management
+    component: backup
+    type: restore
+spec:
+  parallelism: 1
+  completions: 1
+  backoffLimit: 3
+  activeDeadlineSeconds: 14400
+  template:
+    metadata:
+      labels:
+        app: task-management
+        component: backup
+        type: restore
+    spec:
+      securityContext:
+        runAsUser: 999
+        runAsGroup: 999
+        fsGroup: 999
+        privileged: false
+        allowPrivilegeEscalation: false
+        readOnlyRootFilesystem: true
+      containers:
+      - name: db-pitr-restore
+        image: postgres:14-alpine
+        securityContext:
+          capabilities:
+            drop: ["ALL"]
+            add: ["NET_BIND_SERVICE"]
+        command: ["/scripts/restore.sh"]
+        args: ["database", "point-in-time"]
+        env:
+        - name: RECOVERY_TARGET_TIME
+          value: "$(RECOVERY_TIMESTAMP)"
+        - name: AZURE_STORAGE_ACCOUNT
+          valueFrom:
+            secretKeyRef:
+              name: backup-credentials
+              key: storage-account
+        - name: AZURE_STORAGE_CONTAINER
+          valueFrom:
+            secretKeyRef:
+              name: backup-credentials
+              key: storage-container
+        resources:
+          requests:
+            cpu: "500m"
+            memory: "1Gi"
+          limits:
+            cpu: "2"
+            memory: "4Gi"
+        volumeMounts:
+        - name: restore-storage
+          mountPath: /restore
+        - name: restore-scripts
+          mountPath: /scripts
+          readOnly: true
+      volumes:
+      - name: restore-storage
+        persistentVolumeClaim:
+          claimName: restore-storage-pvc
+      - name: restore-scripts
+        configMap:
+          name: restore-scripts
+          defaultMode: 0500
+      restartPolicy: Never
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: file-storage-restore
+  labels:
+    app: task-management
+    component: backup
+    type: restore
+spec:
+  parallelism: 1
+  completions: 1
+  backoffLimit: 3
+  activeDeadlineSeconds: 10800
+  template:
+    metadata:
+      labels:
+        app: task-management
+        component: backup
+        type: restore
+    spec:
+      securityContext:
+        runAsUser: 999
+        runAsGroup: 999
+        fsGroup: 999
+        privileged: false
+        allowPrivilegeEscalation: false
+        readOnlyRootFilesystem: true
+      containers:
+      - name: storage-restore
+        image: mcr.microsoft.com/azure-cli:latest
+        securityContext:
+          capabilities:
+            drop: ["ALL"]
+            add: ["NET_BIND_SERVICE"]
+        command: ["/scripts/restore.sh"]
+        args: ["storage", "parallel"]
+        env:
+        - name: AZURE_STORAGE_ACCOUNT
+          valueFrom:
+            secretKeyRef:
+              name: backup-credentials
+              key: storage-account
+        - name: AZURE_STORAGE_CONTAINER
+          valueFrom:
+            secretKeyRef:
+              name: backup-credentials
+              key: storage-container
+        resources:
+          requests:
+            cpu: "500m"
+            memory: "1Gi"
+          limits:
+            cpu: "2"
+            memory: "4Gi"
+        volumeMounts:
+        - name: restore-storage
+          mountPath: /restore
+        - name: restore-scripts
+          mountPath: /scripts
+          readOnly: true
+      volumes:
+      - name: restore-storage
+        persistentVolumeClaim:
+          claimName: restore-storage-pvc
+      - name: restore-scripts
+        configMap:
+          name: restore-scripts
+          defaultMode: 0500
+      restartPolicy: Never
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: redis-restore
+  labels:
+    app: task-management
+    component: backup
+    type: restore
+spec:
+  parallelism: 1
+  completions: 1
+  backoffLimit: 3
+  activeDeadlineSeconds: 3600
+  template:
+    metadata:
+      labels:
+        app: task-management
+        component: backup
+        type: restore
+    spec:
+      securityContext:
+        runAsUser: 999
+        runAsGroup: 999
+        fsGroup: 999
+        privileged: false
+        allowPrivilegeEscalation: false
+        readOnlyRootFilesystem: true
+      containers:
+      - name: redis-restore
+        image: redis:7-alpine
+        securityContext:
+          capabilities:
+            drop: ["ALL"]
+            add: ["NET_BIND_SERVICE"]
+        command: ["/scripts/restore.sh"]
+        args: ["redis", "atomic"]
+        env:
+        - name: REDIS_HOST
+          valueFrom:
+            configMapKeyRef:
+              name: redis-config
+              key: host
+        - name: AZURE_STORAGE_ACCOUNT
+          valueFrom:
+            secretKeyRef:
+              name: backup-credentials
+              key: storage-account
+        - name: AZURE_STORAGE_CONTAINER
+          valueFrom:
+            secretKeyRef:
+              name: backup-credentials
+              key: storage-container
+        resources:
+          requests:
+            cpu: "500m"
+            memory: "1Gi"
+          limits:
+            cpu: "2"
+            memory: "4Gi"
+        volumeMounts:
+        - name: restore-storage
+          mountPath: /restore
+        - name: restore-scripts
+          mountPath: /scripts
+          readOnly: true
+      volumes:
+      - name: restore-storage
+        persistentVolumeClaim:
+          claimName: restore-storage-pvc
+      - name: restore-scripts
+        configMap:
+          name: restore-scripts
+          defaultMode: 0500
+      restartPolicy: Never
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: restore-storage-pvc
+spec:
+  storageClassName: azure-premium
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 100Gi
