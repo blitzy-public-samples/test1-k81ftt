@@ -1,0 +1,74 @@
+# Kubernetes StorageClass configuration for Task Management System
+# Version: v1.25+
+# Purpose: Define storage classes for different performance tiers and use cases
+
+# Standard SSD storage class for general workloads
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: azure-standard-ssd
+  annotations:
+    storageclass.kubernetes.io/is-default-class: "true"
+provisioner: disk.csi.azure.com
+parameters:
+  skuName: StandardSSD_LRS
+  cachingMode: ReadOnly
+  kind: Managed
+  fsType: ext4
+  maxShares: "2"
+  # Enable encryption at rest with platform-managed keys
+  encryption: "EncryptionAtRestWithPlatformKey"
+reclaimPolicy: Delete
+volumeBindingMode: WaitForFirstConsumer
+allowVolumeExpansion: true
+mountOptions:
+  - noatime
+  - nodiratime
+---
+# Premium SSD storage class for high-performance workloads
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: azure-premium-ssd
+provisioner: disk.csi.azure.com
+parameters:
+  skuName: Premium_LRS
+  cachingMode: ReadOnly
+  kind: Managed
+  fsType: ext4
+  maxShares: "2"
+  # Enable encryption at rest with platform-managed keys
+  encryption: "EncryptionAtRestWithPlatformKey"
+reclaimPolicy: Delete
+volumeBindingMode: WaitForFirstConsumer
+allowVolumeExpansion: true
+mountOptions:
+  - noatime
+  - nodiratime
+---
+# Blob storage class for file attachments and backups
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: azure-blob-storage
+provisioner: blob.csi.azure.com
+parameters:
+  protocol: fuse
+  skuName: Standard_LRS
+  # Enable encryption and security settings
+  encryption: "true"
+  networkAccess: "private"
+  enableHTTPSTrafficOnly: "true"
+  minimumTLSVersion: "TLS1_2"
+  allowBlobPublicAccess: "false"
+  # Enable soft delete for data protection
+  enableSoftDelete: "true"
+  softDeleteRetentionDays: "30"
+  # Enable versioning for file history
+  enableVersioning: "true"
+reclaimPolicy: Retain
+volumeBindingMode: Immediate
+allowVolumeExpansion: false
+mountOptions:
+  - -o allow_other
+  - --file-cache-timeout-in-seconds=120
