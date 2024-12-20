@@ -1,0 +1,41 @@
+* @project-admins
+
+# Backend code ownership
+src/backend/** @backend-team
+
+# Frontend code ownership
+src/web/** @frontend-team
+
+# Infrastructure code ownership
+infrastructure/** @devops-team
+
+# CI/CD workflow ownership
+.github/workflows/** @devops-team
+
+# Core backend services ownership
+src/backend/src/core/services/** @backend-core-team
+
+# API endpoints ownership
+src/backend/src/api/** @backend-api-team
+
+# Frontend components ownership
+src/web/src/components/** @frontend-components-team
+
+# Frontend state management ownership
+src/web/src/store/** @frontend-state-team
+
+# Security-related code ownership
+**/security/** @security-team
+
+# Test files ownership
+**/tests/** @qa-team
+
+# Package dependencies ownership (requires both DevOps and Security approval)
+package.json @devops-team @security-team
+package-lock.json @devops-team @security-team
+
+# Database-related code ownership (requires both Backend and Security approval)
+**/database/** @backend-team @security-team
+
+# Environment configuration files (requires both DevOps and Security approval)
+**/*.env* @devops-team @security-team
