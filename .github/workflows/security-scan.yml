@@ -1,0 +1,191 @@
+name: Security Scan
+
+# Comprehensive security scan triggers
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+  schedule:
+    - cron: '0 0 * * *'  # Daily at midnight UTC
+  workflow_dispatch:  # Manual trigger
+
+# Enhanced permissions for security scanning
+permissions:
+  contents: read
+  security-events: write
+  actions: read
+  packages: read
+  id-token: write
+
+# Environment configuration
+env:
+  SEVERITY_THRESHOLD: HIGH
+  FAIL_ON_VULNERABILITIES: true
+  COMPLIANCE_MODE: strict
+  NODE_VERSION: '20'
+
+jobs:
+  codeql-analysis:
+    name: CodeQL Security Analysis
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v2
+        with:
+          languages: ['javascript', 'typescript']
+          config-file: ./.github/codeql/codeql-config.yml
+          queries: security-extended,security-and-quality
+
+      - name: Autobuild with security flags
+        uses: github/codeql-action/autobuild@v2
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v2
+        with:
+          category: "/language:javascript,typescript"
+          upload-database: true
+
+  dependency-check:
+    name: Dependency Security Scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Snyk Security Scan
+        uses: snyk/actions/node@v1
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        with:
+          args: --severity-threshold=${{ env.SEVERITY_THRESHOLD }}
+          json: true
+          sarif: true
+
+      - name: NPM Audit
+        run: |
+          npm audit --json > npm-audit.json || true
+          
+      - name: License Compliance Check
+        run: |
+          npx license-checker --json > license-report.json
+          
+      - name: Upload Dependency Results
+        uses: github/codeql-action/upload-sarif@v2
+        with:
+          sarif_file: snyk.sarif
+          category: dependency-check
+
+  container-scan:
+    name: Container Security Scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@0.14.0
+        with:
+          scan-type: 'fs,config,secret'
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+          severity: 'CRITICAL,HIGH'
+          scan-ref: '.'
+          hide-progress: false
+          exit-code: '1'
+          ignore-unfixed: false
+          vuln-type: 'os,library'
+          security-checks: 'vuln,config,secret'
+
+      - name: Upload Trivy scan results
+        uses: github/codeql-action/upload-sarif@v2
+        with:
+          sarif_file: trivy-results.sarif
+          category: container-security
+
+  compliance-validation:
+    name: Compliance Validation
+    runs-on: ubuntu-latest
+    needs: [codeql-analysis, dependency-check, container-scan]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: GDPR Compliance Check
+        run: |
+          echo "Validating GDPR requirements..."
+          # Custom script to check GDPR compliance patterns
+          ./scripts/compliance/gdpr-check.sh || exit 1
+
+      - name: SOC 2 Controls Validation
+        run: |
+          echo "Validating SOC 2 controls..."
+          # Custom script to validate SOC 2 requirements
+          ./scripts/compliance/soc2-validate.sh || exit 1
+
+      - name: ISO 27001 Compliance Check
+        run: |
+          echo "Validating ISO 27001 requirements..."
+          # Custom script to check ISO 27001 compliance
+          ./scripts/compliance/iso27001-check.sh || exit 1
+
+      - name: Generate Compliance Report
+        run: |
+          echo "Generating comprehensive compliance report..."
+          ./scripts/compliance/generate-report.sh
+
+      - name: Upload Compliance Report
+        uses: actions/upload-artifact@v3
+        with:
+          name: compliance-report
+          path: compliance-report/
+          retention-days: 90
+
+  security-gate:
+    name: Security Quality Gate
+    needs: [compliance-validation]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check Security Gates
+        run: |
+          echo "Validating security quality gates..."
+          # Evaluate all security scan results against defined thresholds
+          ./scripts/security/evaluate-gates.sh
+        env:
+          CRITICAL_VULN_THRESHOLD: 0
+          HIGH_VULN_THRESHOLD: 0
+          COMPLIANCE_VIOLATION_THRESHOLD: 0
+
+      - name: Notify Security Team
+        if: failure()
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const message = `Security scan failed!\nPlease check the detailed report.`;
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: 'Security Scan Failed',
+              body: message,
+              labels: ['security', 'critical']
+            });
+
+      - name: Send PagerDuty Alert
+        if: failure()
+        run: |
+          curl -X POST \
+            -H 'Content-Type: application/json' \
+            -d '{
+              "service_key": "${{ secrets.PAGERDUTY_SERVICE_KEY }}",
+              "event_type": "trigger",
+              "description": "Security scan failed - Critical vulnerabilities detected"
+            }' \
+            https://events.pagerduty.com/v2/enqueue
