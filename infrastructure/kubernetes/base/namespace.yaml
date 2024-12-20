@@ -1,0 +1,44 @@
+# Kubernetes Namespace definition for Task Management System
+# Version: v1
+# Purpose: Provides logical isolation, resource boundaries, and security controls
+#          with integrated service mesh capabilities for all system components
+
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: taskmanagement
+  labels:
+    # Core identification labels
+    name: taskmanagement
+    app.kubernetes.io/name: task-management-system
+    app.kubernetes.io/part-of: task-management-system
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/component: namespace
+    app.kubernetes.io/version: 1.0.0
+    
+    # Environment and deployment labels
+    environment: base
+    
+    # Service mesh integration labels
+    istio-injection: enabled
+    security.istio.io/enabled: "true"
+    
+    # Monitoring labels
+    monitoring.enabled: "true"
+  
+  annotations:
+    # Namespace description and environment
+    description: "Task Management System primary namespace"
+    environment: base
+    
+    # Istio service mesh configurations
+    security.istio.io/tlsMode: strict
+    network.istio.io/policy: enabled
+    sidecar.istio.io/inject: "true"
+    
+    # Helm release tracking
+    meta.helm.sh/release-name: task-management
+    
+    # Prometheus monitoring configurations
+    monitoring.prometheus.io/scrape: "true"
+    monitoring.prometheus.io/port: "9090"
