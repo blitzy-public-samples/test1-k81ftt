@@ -1,0 +1,170 @@
+version: '3.8'
+
+services:
+  # Backend API Service
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: development
+      args:
+        NODE_ENV: development
+    ports:
+      - "3000:3000"  # API port
+      - "9229:9229"  # Debug port
+    volumes:
+      - ./src:/app/src:ro  # Source code (read-only)
+      - ./node_modules:/app/node_modules
+      - ./logs:/app/logs
+    environment:
+      - NODE_ENV=development
+      - PORT=3000
+      - DATABASE_URL=postgresql://postgres:${POSTGRES_PASSWORD}@db:5432/taskmanager
+      - REDIS_URL=redis://:${REDIS_PASSWORD}@cache:6379
+      - ELASTICSEARCH_URL=http://search:9200
+      - JWT_SECRET=${JWT_SECRET}
+      - DEBUG=app:*
+    depends_on:
+      db:
+        condition: service_healthy
+      cache:
+        condition: service_healthy
+      search:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    restart: unless-stopped
+    networks:
+      - app_network
+
+  # PostgreSQL Database Service
+  db:
+    image: postgres:14-alpine  # version: 14-alpine
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init-scripts:/docker-entrypoint-initdb.d:ro
+    environment:
+      - POSTGRES_DB=taskmanager
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_HOST_AUTH_METHOD=scram-sha-256
+      - POSTGRES_INITDB_ARGS=--auth-host=scram-sha-256
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    restart: unless-stopped
+    networks:
+      - app_network
+
+  # Redis Cache Service
+  cache:
+    image: redis:7.0-alpine  # version: 7.0-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: [
+      "redis-server",
+      "--appendonly", "yes",
+      "--requirepass", "${REDIS_PASSWORD}",
+      "--maxmemory", "512mb",
+      "--maxmemory-policy", "allkeys-lru"
+    ]
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    restart: unless-stopped
+    networks:
+      - app_network
+
+  # Elasticsearch Service
+  search:
+    image: elasticsearch:8.0  # version: 8.0
+    ports:
+      - "9200:9200"
+    volumes:
+      - elasticsearch_data:/usr/share/elasticsearch/data
+    environment:
+      - discovery.type=single-node
+      - ES_JAVA_OPTS=-Xms512m -Xmx512m
+      - xpack.security.enabled=false
+      - cluster.name=docker-cluster
+      - bootstrap.memory_lock=true
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 65536
+        hard: 65536
+    healthcheck:
+      test: ["CMD-SHELL", "curl -s http://localhost:9200/_cluster/health | grep -q 'status.*green'"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 1m
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    restart: unless-stopped
+    networks:
+      - app_network
+
+volumes:
+  postgres_data:
+    driver: local
+    driver_opts:
+      type: none
+      device: ${PWD}/data/postgres
+      o: bind
+  redis_data:
+    driver: local
+    driver_opts:
+      type: none
+      device: ${PWD}/data/redis
+      o: bind
+  elasticsearch_data:
+    driver: local
+    driver_opts:
+      type: none
+      device: ${PWD}/data/elasticsearch
+      o: bind
+
+networks:
+  app_network:
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.28.0.0/16
+    driver_opts:
+      com.docker.network.bridge.name: task_manager_net
