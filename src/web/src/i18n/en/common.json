@@ -1,0 +1,70 @@
+{
+  "app": {
+    "name": "Task Management System",
+    "description": "Enterprise Task Management Solution",
+    "copyright": "© 2024 Task Management System",
+    "version": "Version {{version}}"
+  },
+  "actions": {
+    "create": "Create",
+    "edit": "Edit",
+    "delete": "Delete",
+    "save": "Save",
+    "cancel": "Cancel",
+    "confirm": "Confirm",
+    "back": "Back",
+    "next": "Next",
+    "submit": "Submit",
+    "upload": "Upload",
+    "download": "Download",
+    "search": "Search",
+    "filter": "Filter",
+    "sort": "Sort",
+    "refresh": "Refresh",
+    "close": "Close"
+  },
+  "status": {
+    "loading": "Loading...",
+    "saving": "Saving...",
+    "deleting": "Deleting...",
+    "processing": "Processing...",
+    "success": "Success",
+    "error": "Error",
+    "warning": "Warning",
+    "info": "Information"
+  },
+  "priority": {
+    "low": "Low",
+    "medium": "Medium",
+    "high": "High",
+    "urgent": "Urgent"
+  },
+  "common": {
+    "yes": "Yes",
+    "no": "No",
+    "all": "All",
+    "none": "None",
+    "notFound": "Not Found",
+    "noResults": "No Results Found",
+    "noData": "No Data Available",
+    "required": "Required",
+    "optional": "Optional",
+    "more": "More",
+    "less": "Less"
+  },
+  "time": {
+    "now": "Now",
+    "today": "Today",
+    "yesterday": "Yesterday",
+    "tomorrow": "Tomorrow",
+    "days": "{{count}} days",
+    "weeks": "{{count}} weeks",
+    "months": "{{count}} months"
+  },
+  "units": {
+    "bytes": "{{size}} B",
+    "kilobytes": "{{size}} KB",
+    "megabytes": "{{size}} MB",
+    "gigabytes": "{{size}} GB"
+  }
+}
