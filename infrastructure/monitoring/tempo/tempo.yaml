@@ -1,0 +1,88 @@
+# Tempo Configuration v2.2.0
+# Purpose: Distributed tracing configuration for Task Management System
+# Integrates with OpenTelemetry, Jaeger, and Prometheus for comprehensive observability
+
+auth_enabled: true
+
+server:
+  http_listen_port: 3200
+  grpc_listen_port: 9095
+  http_server_read_timeout: 30s
+  http_server_write_timeout: 30s
+  grpc_server_max_recv_msg_size: 67108864  # 64MB
+
+distributor:
+  receivers:
+    otlp:  # OpenTelemetry receiver
+      protocols:
+        grpc:
+          endpoint: "0.0.0.0:4317"
+        http:
+          endpoint: "0.0.0.0:4318"
+    jaeger:  # Jaeger receiver
+      protocols:
+        thrift_http:
+          endpoint: "0.0.0.0:14268"
+        grpc:
+          endpoint: "0.0.0.0:14250"
+
+ingester:
+  max_block_duration: 5m  # Duration after which a block is cut
+  complete_block_timeout: 30s  # Time to wait before completing a block
+  trace_idle_period: 10s  # How long to wait before considering a trace complete
+
+compactor:
+  compaction:
+    block_retention: 168h  # 7 days retention for trace data
+    compacted_block_retention: 24h  # Retention for compacted blocks
+    compaction_window: 1h  # Time window for compaction
+    max_block_bytes: 107374182400  # 100GB max block size
+    max_compaction_objects: 6000000  # Maximum number of traces per block
+    retries: 3  # Number of retries for failed compactions
+
+storage:
+  trace:
+    backend: local  # Using local storage backend
+    local:
+      path: /var/tempo/traces
+    wal:  # Write-ahead log configuration
+      path: /var/tempo/wal
+    pool:  # Worker pool configuration for storage operations
+      max_workers: 100
+      queue_depth: 10000
+
+querier:
+  max_concurrent_queries: 20  # Maximum number of concurrent queries
+  query_timeout: 1m  # Query timeout duration
+  search:
+    max_duration: 24h  # Maximum time range for search queries
+    max_bytes_per_tag_values: 10485760  # 10MB max for tag values
+
+metrics_generator:
+  registry:
+    external_labels:
+      source: tempo
+      cluster: task-management
+  storage:
+    path: /var/tempo/generator/wal
+    remote_write:  # Configuration for sending metrics to Prometheus
+      enabled: true
+      endpoints:
+        - http://prometheus:9090/api/v1/write
+  processors:
+    service_graphs:  # Enable service graph generation
+      enabled: true
+      dimensions:
+        - service
+        - span_name
+    span_metrics:  # Enable span metrics generation
+      enabled: true
+      dimensions:
+        - service
+        - operation
+        - status_code
+
+overrides:
+  max_bytes_per_trace: 52428800  # 50MB maximum trace size
+  max_search_bytes_per_trace: 1048576  # 1MB maximum for search
+  max_bytes_per_tag_values: 10485760  # 10MB maximum for tag values
