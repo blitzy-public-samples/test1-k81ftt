@@ -1,0 +1,146 @@
+# Prometheus Alert Rules Configuration v2.45.0
+# This configuration defines comprehensive monitoring alerts for the Task Management System
+# covering infrastructure, application performance, security, and business metrics
+
+groups:
+  # Infrastructure Monitoring Alert Group
+  - name: infrastructure_alerts
+    rules:
+    - alert: HighCPUUsage
+      expr: instance:node_cpu_usage:rate5m > 80
+      for: 5m
+      labels:
+        severity: warning
+        category: infrastructure
+      annotations:
+        summary: High CPU usage detected
+        description: CPU usage is above 80% for 5 minutes
+
+    - alert: HighMemoryUsage
+      expr: instance:node_memory_usage:percentage > 85
+      for: 5m
+      labels:
+        severity: warning
+        category: infrastructure
+      annotations:
+        summary: High memory usage detected
+        description: Memory usage is above 85% for 5 minutes
+
+    - alert: DiskSpaceCritical
+      expr: node_filesystem_avail_bytes / node_filesystem_size_bytes * 100 < 10
+      for: 10m
+      labels:
+        severity: critical
+        category: infrastructure
+      annotations:
+        summary: Critical disk space situation
+        description: Less than 10% disk space available
+
+    - alert: NetworkSaturation
+      expr: rate(node_network_transmit_bytes_total[5m]) / node_network_speed_bytes > 0.8
+      for: 5m
+      labels:
+        severity: warning
+        category: infrastructure
+      annotations:
+        summary: Network saturation detected
+        description: Network utilization above 80% of capacity
+
+  # Application Performance Alert Group
+  - name: application_alerts
+    rules:
+    - alert: APIHighLatency
+      expr: http_request_duration_seconds{quantile="0.9"} > 0.5
+      for: 2m
+      labels:
+        severity: warning
+        category: business
+      annotations:
+        summary: High API latency detected
+        description: 90th percentile of API response time is above 500ms
+
+    - alert: ServiceUnavailability
+      expr: avg_over_time(up[5m]) < 0.999
+      for: 1m
+      labels:
+        severity: critical
+        category: business
+      annotations:
+        summary: Service availability below SLA
+        description: Service availability dropped below 99.9% in the last 5 minutes
+
+    - alert: SlowPageLoad
+      expr: browser_page_load_time_seconds > 2
+      for: 5m
+      labels:
+        severity: warning
+        category: business
+      annotations:
+        summary: Slow page load times detected
+        description: Page load times exceeding 2 seconds threshold
+
+  # Security Monitoring Alert Group
+  - name: security_alerts
+    rules:
+    - alert: HighFailedLogins
+      expr: rate(auth_failed_logins_total[5m]) > 10
+      for: 3m
+      labels:
+        severity: critical
+        category: security
+      annotations:
+        summary: High number of failed login attempts
+        description: More than 10 failed logins per minute detected
+
+    - alert: RateLimitExceeded
+      expr: rate(http_requests_total{status="429"}[5m]) > 100
+      for: 1m
+      labels:
+        severity: warning
+        category: security
+      annotations:
+        summary: Rate limit violations detected
+        description: Multiple rate limit violations occurring
+
+    - alert: UnauthorizedAccessSpike
+      expr: sum(rate(http_requests_total{status=~"4.."}[5m])) by (path) > 50
+      for: 2m
+      labels:
+        severity: critical
+        category: security
+      annotations:
+        summary: Spike in unauthorized access attempts
+        description: High rate of unauthorized access attempts detected on specific endpoints
+
+  # Business Metrics Alert Group
+  - name: business_alerts
+    rules:
+    - alert: TaskCompletionDelay
+      expr: task_completion_time_seconds > 86400
+      for: 1h
+      labels:
+        severity: warning
+        category: business
+      annotations:
+        summary: Tasks taking longer than expected to complete
+        description: Tasks are taking more than 24 hours to complete
+
+    - alert: ProjectDeadlineRisk
+      expr: project_completion_percentage < 50 and project_time_remaining_days < 7
+      for: 1h
+      labels:
+        severity: critical
+        category: business
+      annotations:
+        summary: Project at risk of missing deadline
+        description: Project is less than 50% complete with less than 7 days remaining
+
+    - alert: TeamProductivityDrop
+      expr: rate(tasks_completed_total[24h]) < 0.7 * avg_over_time(rate(tasks_completed_total[24h])[7d:1h])
+      for: 6h
+      labels:
+        severity: warning
+        category: business
+      annotations:
+        summary: Team productivity below normal levels
+        description: Task completion rate is 30% below the 7-day average
