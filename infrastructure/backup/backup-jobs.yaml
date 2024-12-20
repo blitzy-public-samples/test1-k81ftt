@@ -1,0 +1,216 @@
+# Kubernetes CronJob configurations for automated system backups
+# Version: v1.25+
+# Purpose: Define backup schedules and configurations for database, file storage, and Redis cache
+
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: database-full-backup
+  labels:
+    app: task-management
+    component: backup
+    type: database-full
+spec:
+  schedule: "0 0 * * *"  # Daily at midnight
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      activeDeadlineSeconds: 3600  # 1 hour timeout
+      backoffLimit: 3
+      template:
+        metadata:
+          labels:
+            app: task-management
+            component: backup
+            type: database-full
+        spec:
+          securityContext:
+            runAsUser: 999
+            runAsGroup: 999
+            fsGroup: 999
+            privileged: false
+            readOnlyRootFilesystem: true
+            allowPrivilegeEscalation: false
+            seccompProfile:
+              type: RuntimeDefault
+          containers:
+          - name: database-backup
+            image: backup-tools:1.0.0
+            command: ["/scripts/backup.sh"]
+            args: ["--type=full", "--source=database"]
+            env:
+            - name: BACKUP_STORAGE_ACCOUNT
+              valueFrom:
+                secretKeyRef:
+                  name: backup-credentials
+                  key: AZURE_STORAGE_ACCOUNT
+            - name: BACKUP_CONTAINER
+              valueFrom:
+                secretKeyRef:
+                  name: backup-credentials
+                  key: AZURE_STORAGE_CONTAINER
+            - name: POSTGRES_HOST
+              valueFrom:
+                secretKeyRef:
+                  name: db-credentials
+                  key: DB_HOST
+            - name: POSTGRES_DB
+              valueFrom:
+                secretKeyRef:
+                  name: db-credentials
+                  key: DB_NAME
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: db-credentials
+                  key: DB_USER
+            - name: BACKUP_ENCRYPTION_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: backup-credentials
+                  key: BACKUP_ENCRYPTION_KEY
+            - name: MONITORING_ENDPOINT
+              valueFrom:
+                configMapKeyRef:
+                  name: monitoring-config
+                  key: MONITORING_ENDPOINT
+            resources:
+              requests:
+                cpu: "100m"
+                memory: "256Mi"
+                ephemeral-storage: "1Gi"
+              limits:
+                cpu: "500m"
+                memory: "1Gi"
+                ephemeral-storage: "5Gi"
+            volumeMounts:
+            - name: backup-storage
+              mountPath: /backup
+              readOnly: false
+            - name: backup-scripts
+              mountPath: /scripts
+              readOnly: true
+            - name: monitoring-config
+              mountPath: /etc/monitoring
+              readOnly: true
+          volumes:
+          - name: backup-storage
+            persistentVolumeClaim:
+              claimName: backup-storage-pvc
+          - name: backup-scripts
+            configMap:
+              name: backup-scripts
+              defaultMode: 0500
+          - name: monitoring-config
+            configMap:
+              name: monitoring-config
+          restartPolicy: OnFailure
+
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: database-incremental-backup
+  labels:
+    app: task-management
+    component: backup
+    type: database-incremental
+spec:
+  schedule: "0 * * * *"  # Every hour
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 24
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      activeDeadlineSeconds: 1800  # 30 minutes timeout
+      backoffLimit: 3
+      template:
+        metadata:
+          labels:
+            app: task-management
+            component: backup
+            type: database-incremental
+        spec:
+          securityContext:
+            runAsUser: 999
+            runAsGroup: 999
+            fsGroup: 999
+            privileged: false
+            readOnlyRootFilesystem: true
+            allowPrivilegeEscalation: false
+            seccompProfile:
+              type: RuntimeDefault
+          containers:
+          - name: database-backup
+            image: backup-tools:1.0.0
+            command: ["/scripts/backup.sh"]
+            args: ["--type=incremental", "--source=database"]
+            env:
+            - name: BACKUP_STORAGE_ACCOUNT
+              valueFrom:
+                secretKeyRef:
+                  name: backup-credentials
+                  key: AZURE_STORAGE_ACCOUNT
+            - name: BACKUP_CONTAINER
+              valueFrom:
+                secretKeyRef:
+                  name: backup-credentials
+                  key: AZURE_STORAGE_CONTAINER
+            - name: POSTGRES_HOST
+              valueFrom:
+                secretKeyRef:
+                  name: db-credentials
+                  key: DB_HOST
+            - name: POSTGRES_DB
+              valueFrom:
+                secretKeyRef:
+                  name: db-credentials
+                  key: DB_NAME
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: db-credentials
+                  key: DB_USER
+            - name: BACKUP_ENCRYPTION_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: backup-credentials
+                  key: BACKUP_ENCRYPTION_KEY
+            - name: MONITORING_ENDPOINT
+              valueFrom:
+                configMapKeyRef:
+                  name: monitoring-config
+                  key: MONITORING_ENDPOINT
+            resources:
+              requests:
+                cpu: "100m"
+                memory: "256Mi"
+                ephemeral-storage: "1Gi"
+              limits:
+                cpu: "500m"
+                memory: "1Gi"
+                ephemeral-storage: "5Gi"
+            volumeMounts:
+            - name: backup-storage
+              mountPath: /backup
+              readOnly: false
+            - name: backup-scripts
+              mountPath: /scripts
+              readOnly: true
+            - name: monitoring-config
+              mountPath: /etc/monitoring
+              readOnly: true
+          volumes:
+          - name: backup-storage
+            persistentVolumeClaim:
+              claimName: backup-storage-pvc
+          - name: backup-scripts
+            configMap:
+              name: backup-scripts
+              defaultMode: 0500
+          - name: monitoring-config
+            configMap:
+              name: monitoring-config
+          restartPolicy: OnFailure
