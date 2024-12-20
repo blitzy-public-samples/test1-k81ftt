@@ -1,0 +1,100 @@
+# kubernetes v1.25+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: backup-retention-policies
+  namespace: backup-system
+  labels:
+    app: task-management
+    component: backup
+    tier: infrastructure
+  annotations:
+    description: Backup retention policies for task management system
+    lastUpdated: "2024-01-20"
+data:
+  database:
+    full_backup:
+      retention_period_days: 30
+      minimum_backups: 7
+      compression: true
+      compression_algorithm: "zstd"
+      storage_tier: "Cool"
+      validation_required: true
+    incremental_backup:
+      retention_period_hours: 72
+      minimum_backups: 24
+      compression: true
+      compression_algorithm: "zstd"
+      storage_tier: "Hot"
+      validation_required: true
+    archival:
+      trigger: "monthly"
+      retention_period_years: 1
+      compression: true
+      compression_algorithm: "zstd"
+      storage_tier: "Archive"
+      validation_required: true
+      legal_hold: false
+
+  file_storage:
+    daily_backup:
+      retention_period_days: 30
+      minimum_backups: 7
+      compression: true
+      compression_algorithm: "zstd"
+      storage_tier: "Cool"
+      validation_required: true
+    archival:
+      trigger: "yearly"
+      retention_period_years: 2
+      compression: true
+      compression_algorithm: "zstd"
+      storage_tier: "Archive"
+      validation_required: true
+      legal_hold: false
+
+  redis_cache:
+    daily_backup:
+      retention_period_days: 7
+      minimum_backups: 3
+      compression: true
+      compression_algorithm: "zstd"
+      storage_tier: "Hot"
+      validation_required: true
+
+  cleanup_policies:
+    expired_backups:
+      action: "delete"
+      schedule: "daily"
+      grace_period_hours: 24
+      dry_run: false
+    failed_backups:
+      retention_period_days: 3
+      action: "delete"
+      notification_required: true
+
+  storage_configuration:
+    storage_tiers:
+      Hot:
+        description: "Optimized for frequently accessed data with immediate availability"
+        access_time: "immediate"
+        cost_tier: "highest"
+        replication: "ZRS"
+        encryption: "AES-256"
+      Cool:
+        description: "Optimized for infrequently accessed data with moderate latency"
+        access_time: "within_minutes"
+        cost_tier: "medium"
+        replication: "LRS"
+        encryption: "AES-256"
+      Archive:
+        description: "Optimized for long-term retention with highest latency"
+        access_time: "within_hours"
+        cost_tier: "lowest"
+        replication: "LRS"
+        encryption: "AES-256"
+
+  globals:
+    STORAGE_ACCOUNT: ${AZURE_STORAGE_ACCOUNT}
+    STORAGE_CONTAINER: ${AZURE_STORAGE_CONTAINER}
+    BACKUP_ENCRYPTION_KEY: ${BACKUP_ENCRYPTION_KEY}
