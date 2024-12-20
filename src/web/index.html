@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#1976d2" />
+    
+    <!-- Primary Meta Tags -->
+    <meta name="description" content="Enterprise Task Management System for efficient team collaboration and project organization" />
+    <meta name="keywords" content="task management, project management, team collaboration" />
+    
+    <!-- Open Graph Meta Tags -->
+    <meta property="og:title" content="Task Management System" />
+    <meta property="og:description" content="Enterprise Task Management System for efficient team collaboration and project organization" />
+    <meta property="og:image" content="/og-image.png" />
+    <meta property="og:type" content="website" />
+    
+    <!-- Security Headers -->
+    <meta http-equiv="X-Content-Type-Options" content="nosniff" />
+    <meta http-equiv="X-Frame-Options" content="DENY" />
+    <meta http-equiv="X-XSS-Protection" content="1; mode=block" />
+    <meta http-equiv="Referrer-Policy" content="strict-origin-when-cross-origin" />
+    <meta http-equiv="Permissions-Policy" content="camera=(), microphone=(), geolocation=()" />
+    
+    <!-- Preconnect to critical domains -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="preconnect" href="https://api.taskmanager.com" crossorigin />
+    
+    <!-- Preload critical resources -->
+    <link rel="preload" href="/src/main.tsx" as="script" type="module" />
+    <link rel="preload" href="/assets/fonts/Roboto-Regular.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href="/assets/css/critical.css" as="style" />
+    
+    <!-- Prefetch non-critical chunks -->
+    <link rel="prefetch" href="/assets/js/auth-chunk.js" as="script" />
+    <link rel="prefetch" href="/assets/js/dashboard-chunk.js" as="script" />
+    
+    <!-- Material Icons and Roboto Font -->
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet" />
+    
+    <!-- Critical CSS -->
+    <link rel="stylesheet" href="/assets/css/critical.css" />
+    
+    <title>Task Management System</title>
+    
+    <!-- CSP nonce for inline scripts -->
+    <script nonce="%CSP_NONCE%">
+      window.ENV = {
+        API_URL: '%VITE_API_URL%',
+        NODE_ENV: '%NODE_ENV%'
+      };
+    </script>
+  </head>
+  <body>
+    <noscript>
+      <div style="padding: 20px; text-align: center;">
+        JavaScript is required to run this application. Please enable JavaScript in your browser settings.
+      </div>
+    </noscript>
+    
+    <!-- Application root with accessibility attributes -->
+    <div 
+      id="root" 
+      role="application" 
+      aria-label="Task Management System"
+    ></div>
+    
+    <!-- Main application script -->
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
