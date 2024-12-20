@@ -1,0 +1,104 @@
+{
+  "menu": {
+    "dashboard": {
+      "title": "Dashboard",
+      "overview": "Overview",
+      "analytics": "Analytics",
+      "reports": "Reports",
+      "activity": "Recent Activity"
+    },
+    "projects": {
+      "title": "Projects",
+      "list": "All Projects",
+      "create": "Create Project",
+      "detail": "Project Details",
+      "settings": "Project Settings",
+      "members": "Team Members",
+      "timeline": "Timeline",
+      "milestones": "Milestones",
+      "dependencies": "Dependencies"
+    },
+    "tasks": {
+      "title": "Tasks",
+      "list": "All Tasks",
+      "create": "Create Task",
+      "detail": "Task Details",
+      "comments": "Comments",
+      "attachments": "Attachments",
+      "history": "Task History",
+      "dependencies": "Task Dependencies"
+    },
+    "analytics": {
+      "title": "Analytics",
+      "performance": "Performance Metrics",
+      "distribution": "Task Distribution",
+      "progress": "Project Progress",
+      "reports": "Custom Reports",
+      "trends": "Trend Analysis",
+      "workload": "Team Workload",
+      "efficiency": "Process Efficiency"
+    },
+    "user": {
+      "profile": "Profile",
+      "settings": "Settings",
+      "preferences": "Preferences",
+      "notifications": "Notifications",
+      "accessibility": "Accessibility",
+      "language": "Language",
+      "theme": "Theme",
+      "security": "Security",
+      "logout": "Logout"
+    }
+  },
+  "breadcrumbs": {
+    "home": "Home",
+    "dashboard": "Dashboard",
+    "projects": "Projects",
+    "tasks": "Tasks",
+    "analytics": "Analytics",
+    "settings": "Settings",
+    "profile": "Profile",
+    "search": "Search Results"
+  },
+  "actions": {
+    "toggleMenu": "Toggle Menu",
+    "toggleSidebar": "Toggle Sidebar",
+    "expandAll": "Expand All",
+    "collapseAll": "Collapse All",
+    "backToTop": "Back to Top",
+    "moreActions": "More Actions",
+    "refresh": "Refresh",
+    "filter": "Filter",
+    "sort": "Sort",
+    "export": "Export"
+  },
+  "tooltips": {
+    "toggleNavigation": "Toggle Navigation Menu",
+    "expandSidebar": "Expand Sidebar Panel",
+    "collapseSidebar": "Collapse Sidebar Panel",
+    "searchMenu": "Search in Navigation Menu",
+    "notifications": "View Your Notifications",
+    "userProfile": "Access Your Profile",
+    "settings": "Manage Settings",
+    "help": "Get Help",
+    "createNew": "Create New Item"
+  },
+  "aria": {
+    "mainNavigation": "Main Navigation Menu",
+    "userMenu": "User Account Menu",
+    "sideNavigation": "Side Navigation Panel",
+    "breadcrumbNavigation": "Breadcrumb Navigation Trail",
+    "currentPage": "Current Page",
+    "navigationLevel": "Navigation Level",
+    "menuItem": "Menu Item",
+    "submenu": "Submenu",
+    "expandButton": "Expand Button",
+    "collapseButton": "Collapse Button",
+    "searchInput": "Search Navigation",
+    "notificationBadge": "Notification Count"
+  },
+  "_version": "1.0.0",
+  "_language": "en",
+  "_region": "global",
+  "_lastUpdated": "2024-01-01"
+}
