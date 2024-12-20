@@ -1,0 +1,99 @@
+# Dependencies
+node_modules/
+pnpm-lock.yaml
+yarn.lock
+package-lock.json
+.pnpm-store/
+.yarn/*
+!.yarn/patches
+!.yarn/releases
+
+# Build Outputs
+dist/
+build/
+.next/
+coverage/
+*.tsbuildinfo
+*.js.map
+*.css.map
+storybook-static/
+.webpack/
+out/
+
+# Environment & Secrets
+.env
+.env.*
+*.pem
+.key
+*.crt
+*.pfx
+*id_rsa*
+*.p12
+*.publishsettings
+secrets.yaml
+credentials.json
+*-audit.json
+
+# IDE & Editor
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+.project
+.classpath
+.settings/
+*.sublime-*
+.history/
+
+# Logs & Temporary
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+tmp/
+temp/
+.temp/
+*.dump
+*.pid
+.eslintcache
+
+# Infrastructure
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfvars
+.terraformrc
+terraform.rc
+*.tar
+*.gz
+*.zip
+docker-compose.override.yml
+
+# Testing
+coverage/
+.nyc_output/
+cypress/videos/
+cypress/screenshots/
+*.test.js.snap
+__snapshots__/
+test-results/
+playwright-report/
+*.sqlite
+*.db
+
+# Platform Specific
+# Windows
+desktop.ini
+ehthumbs.db
+
+# macOS
+.AppleDouble
+.LSOverride
+
+# Linux
+*~
+.fuse_hidden*
+.directory
