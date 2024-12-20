@@ -1,0 +1,119 @@
+# Kubernetes ConfigMap for Task Management System
+# Version: v1
+# Purpose: Stores non-sensitive configuration data for application components
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: app-config
+  namespace: taskmanagement
+  labels:
+    app.kubernetes.io/name: task-management-system
+    app.kubernetes.io/part-of: task-management-system
+    app.kubernetes.io/managed-by: kustomize
+    environment: base
+data:
+  # Application Environment Settings
+  NODE_ENV: "base"
+  LOG_LEVEL: "info"
+  API_PORT: "3000"
+  API_PREFIX: "/api/v1"
+
+  # CORS and Security Settings
+  CORS_ORIGIN: "*"
+  RATE_LIMIT_WINDOW: "15m"
+  RATE_LIMIT_MAX: "100"
+
+  # API Endpoints Configuration
+  WEBSOCKET_PATH: "/ws"
+  METRICS_PATH: "/metrics"
+  HEALTH_CHECK_PATH: "/health"
+
+  # File Upload Settings
+  FILE_UPLOAD_MAX_SIZE: "25MB"
+
+  # Cache and Session Management
+  CACHE_TTL: "3600"
+  SESSION_TIMEOUT: "24h"
+
+  # Pagination Settings
+  TASK_PAGINATION_LIMIT: "50"
+  PROJECT_PAGINATION_LIMIT: "20"
+
+  # Performance Tuning
+  API_RESPONSE_TIMEOUT: "500ms"
+  MAX_CONCURRENT_CONNECTIONS: "1000"
+  RETRY_ATTEMPTS: "3"
+  RETRY_DELAY: "1000"
+
+  # Database Connection Settings
+  DATABASE_POOL_SIZE: "20"
+  DATABASE_IDLE_TIMEOUT: "10000"
+
+  # Redis Configuration
+  REDIS_MAX_CONNECTIONS: "50"
+
+  # Elasticsearch Settings
+  ELASTICSEARCH_TIMEOUT: "5000"
+
+  # Monitoring Configuration
+  METRICS_INTERVAL: "15s"
+  HEALTH_CHECK_INTERVAL: "30s"
+
+---
+# Service-specific configuration
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: service-config
+  namespace: taskmanagement
+  labels:
+    app.kubernetes.io/name: task-management-system
+    app.kubernetes.io/part-of: task-management-system
+    app.kubernetes.io/managed-by: kustomize
+    environment: base
+data:
+  # API Gateway Configuration
+  GATEWAY_TIMEOUT: "60s"
+  GATEWAY_MAX_BODY_SIZE: "25MB"
+  GATEWAY_KEEPALIVE_TIMEOUT: "75s"
+
+  # Rate Limiting Configuration
+  RATE_LIMIT_ENABLED: "true"
+  RATE_LIMIT_STRATEGY: "sliding-window"
+  RATE_LIMIT_HEADERS_ENABLED: "true"
+
+  # Cache Configuration
+  CACHE_STRATEGY: "distributed"
+  CACHE_COMPRESSION_ENABLED: "true"
+  CACHE_COMPRESSION_THRESHOLD: "1024"
+
+  # Service Discovery
+  SERVICE_REGISTRY_ENABLED: "true"
+  SERVICE_HEALTH_CHECK_ENABLED: "true"
+  SERVICE_HEALTH_CHECK_INTERVAL: "30s"
+
+  # Circuit Breaker Configuration
+  CIRCUIT_BREAKER_ENABLED: "true"
+  CIRCUIT_BREAKER_THRESHOLD: "50"
+  CIRCUIT_BREAKER_TIMEOUT: "30s"
+
+  # Logging Configuration
+  LOG_FORMAT: "json"
+  LOG_TIMESTAMP_FORMAT: "ISO8601"
+  LOG_INCLUDE_TRACE_ID: "true"
+
+  # Metrics Collection
+  METRICS_ENABLED: "true"
+  METRICS_FORMAT: "prometheus"
+  METRICS_COLLECTION_INTERVAL: "15s"
+
+  # Connection Pool Settings
+  CONNECTION_POOL_MIN_SIZE: "5"
+  CONNECTION_POOL_MAX_SIZE: "50"
+  CONNECTION_POOL_IDLE_TIMEOUT: "300s"
+
+  # Request/Response Settings
+  REQUEST_TIMEOUT: "30s"
+  RESPONSE_COMPRESSION_ENABLED: "true"
+  RESPONSE_COMPRESSION_LEVEL: "6"
