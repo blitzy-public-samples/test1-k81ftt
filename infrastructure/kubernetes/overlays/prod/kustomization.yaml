@@ -1,0 +1,108 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# Production namespace configuration
+namespace: taskmanagement-prod
+namePrefix: prod-
+
+# Common labels for all resources
+commonLabels:
+  environment: production
+  app.kubernetes.io/environment: production
+  app.kubernetes.io/managed-by: kustomize
+  app.kubernetes.io/part-of: task-management
+  compliance.security/pci-dss: enabled
+  monitoring.azure.com/scrape: true
+
+# Common annotations for all resources
+commonAnnotations:
+  environment: production
+  contact: devops@taskmanagement.com
+  deployment.kubernetes.io/revision: "1"
+  prometheus.io/scrape: "true"
+  prometheus.io/port: "9090"
+  azure.workload/tier: production
+  backup.velero.io/backup-volumes: "true"
+
+# Base resources and additional configurations
+resources:
+  - ../../base
+  - network-policies/
+  - pod-security-policies/
+
+# Production replica counts for high availability
+replicas:
+  - name: api-gateway
+    count: 3
+  - name: web-frontend
+    count: 3
+  - name: task-service
+    count: 3
+  - name: project-service
+    count: 3
+  - name: analytics-service
+    count: 2
+  - name: collaboration-service
+    count: 3
+
+# Production image tags
+images:
+  - name: task-management/api-gateway
+    newTag: stable
+  - name: task-management/web-frontend
+    newTag: stable
+  - name: task-management/task-service
+    newTag: stable
+  - name: task-management/project-service
+    newTag: stable
+  - name: task-management/analytics-service
+    newTag: stable
+  - name: task-management/collaboration-service
+    newTag: stable
+
+# Production configuration settings
+configMapGenerator:
+  - name: app-config
+    behavior: merge
+    literals:
+      - NODE_ENV=production
+      - LOG_LEVEL=info
+      - CORS_ORIGIN=https://taskmanagement.com
+      - RATE_LIMIT_WINDOW=15m
+      - RATE_LIMIT_MAX=100
+      - MONITORING_ENABLED=true
+      - TRACING_ENABLED=true
+      - METRICS_ENABLED=true
+      - SESSION_SECURE=true
+      - TLS_MIN_VERSION=TLSv1.2
+
+# Production secrets management
+secretGenerator:
+  - name: app-secrets
+    behavior: merge
+    envs:
+      - secrets/prod.env
+
+# Production-specific patches
+patchesStrategicMerge:
+  - patches/ingress-prod.yaml
+  - patches/resources-prod.yaml
+  - patches/hpa-prod.yaml
+  - patches/security-prod.yaml
+  - patches/monitoring-prod.yaml
+  - patches/backup-prod.yaml
+
+# JSON patches for specific resources
+patchesJson6902:
+  - target:
+      group: networking.k8s.io
+      version: v1
+      kind: Ingress
+      name: task-management-ingress
+    path: patches/ingress-annotations.yaml
+  - target:
+      group: autoscaling/v2
+      version: v1
+      kind: HorizontalPodAutoscaler
+      name: task-management-hpa
+    path: patches/hpa-settings.yaml
