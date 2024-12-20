@@ -1,0 +1,212 @@
+// =============================================================================
+// GLOBAL STYLES
+// Material Design 3 Implementation with WCAG 2.1 Level AA Compliance
+// Version: 1.0.0
+// =============================================================================
+
+// Import external dependencies
+@import 'normalize.css/normalize.css'; // v8.0.1
+
+// Import internal dependencies
+@import './variables';
+@import './mixins';
+@import './animations';
+@import './themes';
+
+// -----------------------------------------------------------------------------
+// GLOBAL RESETS & BASE STYLES
+// Establish consistent base styling and box model
+// -----------------------------------------------------------------------------
+
+html {
+  box-sizing: border-box;
+  font-size: 16px;
+  scroll-behavior: smooth;
+  font-synthesis: none;
+  text-size-adjust: 100%;
+  accent-color: var(--primary-color);
+  color-scheme: light dark;
+  
+  @include reduced-motion {
+    scroll-behavior: auto;
+  }
+}
+
+*, *::before, *::after {
+  box-sizing: inherit;
+  margin: 0;
+  padding: 0;
+  min-width: 0;
+  contain: content;
+}
+
+body {
+  font-family: var(--font-family-base);
+  font-size: var(--font-size-base);
+  line-height: var(--line-height-base);
+  color: var(--text-primary);
+  background-color: var(--background-color);
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  isolation: isolate;
+  overflow-wrap: break-word;
+  word-break: break-word;
+  tab-size: 4;
+}
+
+// -----------------------------------------------------------------------------
+// LAYOUT & CONTAINER STYLES
+// F-pattern for desktop, Z-pattern for mobile
+// -----------------------------------------------------------------------------
+
+.container {
+  @include container($max-content-width);
+  
+  &--f-pattern {
+    @include f-pattern;
+  }
+  
+  &--z-pattern {
+    @include z-pattern;
+  }
+}
+
+// -----------------------------------------------------------------------------
+// TYPOGRAPHY
+// Fluid typography system with accessibility considerations
+// -----------------------------------------------------------------------------
+
+h1, h2, h3, h4, h5, h6 {
+  @include fluid-type(24, 48);
+  margin-bottom: spacing('lg');
+  color: var(--text-primary);
+}
+
+p {
+  margin-bottom: spacing('md');
+  max-width: 75ch; // Optimal reading length
+}
+
+// -----------------------------------------------------------------------------
+// ACCESSIBILITY ENHANCEMENTS
+// WCAG 2.1 Level AA compliance features
+// -----------------------------------------------------------------------------
+
+// Focus styles
+:focus-visible {
+  @include focus-visible;
+}
+
+// Skip links
+.skip-link {
+  @include visually-hidden;
+  
+  &:focus {
+    position: fixed;
+    top: spacing('md');
+    left: spacing('md');
+    width: auto;
+    height: auto;
+    padding: spacing('md');
+    background: var(--surface-color);
+    z-index: map-get($z-index-tokens, 'modal');
+    clip: auto;
+    clip-path: none;
+  }
+}
+
+// Reduced motion
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+// High contrast mode support
+@include high-contrast {
+  img {
+    filter: grayscale(100%) contrast(120%);
+  }
+  
+  ::selection {
+    background-color: var(--text-primary);
+    color: var(--background-color);
+  }
+}
+
+// -----------------------------------------------------------------------------
+// RESPONSIVE DESIGN
+// Mobile-first breakpoint system
+// -----------------------------------------------------------------------------
+
+.responsive-grid {
+  display: grid;
+  gap: spacing('md');
+  grid-template-columns: repeat(4, 1fr);
+  
+  @include breakpoint('sm') {
+    grid-template-columns: repeat(8, 1fr);
+  }
+  
+  @include breakpoint('md') {
+    grid-template-columns: repeat(12, 1fr);
+  }
+}
+
+// -----------------------------------------------------------------------------
+// PERFORMANCE OPTIMIZATIONS
+// Rendering and paint optimizations
+// -----------------------------------------------------------------------------
+
+// Content visibility optimizations
+.optimize-paint {
+  content-visibility: auto;
+  contain-intrinsic-size: 0 500px;
+}
+
+// Layer promotion for animations
+.promote-layer {
+  will-change: transform;
+  transform: translateZ(0);
+}
+
+// -----------------------------------------------------------------------------
+// UTILITY CLASSES
+// Commonly used utility classes
+// -----------------------------------------------------------------------------
+
+.visually-hidden {
+  @include visually-hidden;
+}
+
+.text-truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.flex-center {
+  @include flex-layout(row, center, center);
+}
+
+.grid-auto-fit {
+  @include grid-layout(repeat(auto-fit, minmax(250px, 1fr)));
+}
+
+// -----------------------------------------------------------------------------
+// EXPORTS
+// Make global styles available for importing
+// -----------------------------------------------------------------------------
+
+:export {
+  base-styles: true;
+  typography: true;
+  layout: true;
+  utilities: true;
+  accessibility: true;
+  performance: true;
+}
