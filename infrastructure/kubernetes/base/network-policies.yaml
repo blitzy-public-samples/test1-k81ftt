@@ -1,0 +1,140 @@
+# Network Policies for Task Management System
+# Version: v1
+# Purpose: Implements zero-trust network security model with explicit allow rules
+#          for pod-to-pod communication and external access
+
+# Using networking.k8s.io/v1 API version for NetworkPolicy resources
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny-all
+  namespace: taskmanagement
+  labels:
+    app.kubernetes.io/name: task-management-system
+    app.kubernetes.io/part-of: task-management-system
+    app.kubernetes.io/component: network-policy
+spec:
+  # Empty podSelector matches all pods in namespace
+  podSelector: {}
+  policyTypes:
+  - Ingress
+  - Egress
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-ingress-traffic
+  namespace: taskmanagement
+  labels:
+    app.kubernetes.io/name: task-management-system
+    app.kubernetes.io/part-of: task-management-system
+    app.kubernetes.io/component: network-policy
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/component: frontend
+  policyTypes:
+  - Ingress
+  ingress:
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          name: ingress-nginx
+    ports:
+    - protocol: TCP
+      port: 80
+    - protocol: TCP
+      port: 443
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-api-gateway
+  namespace: taskmanagement
+  labels:
+    app.kubernetes.io/name: task-management-system
+    app.kubernetes.io/part-of: task-management-system
+    app.kubernetes.io/component: network-policy
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/component: backend
+  policyTypes:
+  - Ingress
+  ingress:
+  - from:
+    - podSelector:
+        matchLabels:
+          app.kubernetes.io/name: api-gateway
+    ports:
+    - protocol: TCP
+      port: 8080  # API_PORT global variable
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-monitoring
+  namespace: taskmanagement
+  labels:
+    app.kubernetes.io/name: task-management-system
+    app.kubernetes.io/part-of: task-management-system
+    app.kubernetes.io/component: network-policy
+spec:
+  # Empty podSelector to allow monitoring access to all pods
+  podSelector: {}
+  policyTypes:
+  - Ingress
+  ingress:
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          name: monitoring
+    ports:
+    - protocol: TCP
+      port: 9090  # METRICS_PORT global variable
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-service-mesh
+  namespace: taskmanagement
+  labels:
+    app.kubernetes.io/name: task-management-system
+    app.kubernetes.io/part-of: task-management-system
+    app.kubernetes.io/component: network-policy
+spec:
+  podSelector: {}
+  policyTypes:
+  - Ingress
+  ingress:
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          name: istio-system
+    ports:
+    - protocol: TCP
+      port: 15090  # Istio proxy metrics port
+    - protocol: TCP
+      port: 15021  # Istio health check port
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-dns
+  namespace: taskmanagement
+  labels:
+    app.kubernetes.io/name: task-management-system
+    app.kubernetes.io/part-of: task-management-system
+    app.kubernetes.io/component: network-policy
+spec:
+  podSelector: {}
+  policyTypes:
+  - Egress
+  egress:
+  - to:
+    - namespaceSelector:
+        matchLabels:
+          name: kube-system
+    ports:
+    - protocol: UDP
+      port: 53  # DNS port
