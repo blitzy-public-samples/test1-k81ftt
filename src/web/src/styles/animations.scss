@@ -1,0 +1,227 @@
+// =============================================================================
+// ANIMATION LIBRARY
+// Material Design 3 Implementation with WCAG 2.1 Level AA Compliance
+// Version: 1.0.0
+// =============================================================================
+
+@import './variables';
+
+// -----------------------------------------------------------------------------
+// MOTION SAFETY & ACCESSIBILITY
+// Respects prefers-reduced-motion and implements WCAG 2.1 guidelines
+// -----------------------------------------------------------------------------
+@mixin motion-safe {
+  @media (prefers-reduced-motion: no-preference) {
+    @content;
+  }
+}
+
+@mixin motion-reduce {
+  @media (prefers-reduced-motion: reduce) {
+    animation: none !important;
+    transition: none !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+// -----------------------------------------------------------------------------
+// ANIMATION TIMING TOKENS
+// Material Design standard durations and easing curves
+// -----------------------------------------------------------------------------
+$animation-duration: (
+  short: 200ms,
+  base: 300ms,
+  long: 400ms,
+  complex: 500ms
+);
+
+$animation-easing: (
+  standard: cubic-bezier(0.2, 0, 0, 1),
+  decelerate: cubic-bezier(0, 0, 0.2, 1),
+  accelerate: cubic-bezier(0.4, 0, 1, 1)
+);
+
+// -----------------------------------------------------------------------------
+// KEYFRAME ANIMATIONS
+// Performance-optimized animation definitions
+// -----------------------------------------------------------------------------
+@keyframes fade-in {
+  from {
+    opacity: 0;
+    will-change: opacity;
+  }
+  to {
+    opacity: 1;
+    will-change: auto;
+  }
+}
+
+@keyframes fade-out {
+  from {
+    opacity: 1;
+    will-change: opacity;
+  }
+  to {
+    opacity: 0;
+    will-change: auto;
+  }
+}
+
+@keyframes slide-up {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+    will-change: transform, opacity;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+    will-change: auto;
+  }
+}
+
+@keyframes slide-down {
+  from {
+    transform: translateY(-20px);
+    opacity: 0;
+    will-change: transform, opacity;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+    will-change: auto;
+  }
+}
+
+@keyframes scale-in {
+  from {
+    transform: scale(0.95);
+    opacity: 0;
+    will-change: transform, opacity;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+    will-change: auto;
+  }
+}
+
+@keyframes rotate {
+  from {
+    transform: rotate(0deg);
+    will-change: transform;
+  }
+  to {
+    transform: rotate(360deg);
+    will-change: auto;
+  }
+}
+
+// -----------------------------------------------------------------------------
+// UTILITY FUNCTIONS
+// Generate performant transitions and animations
+// -----------------------------------------------------------------------------
+@function generateTransition($property, $duration: 'base', $easing: 'standard') {
+  $duration-value: map-get($animation-duration, $duration);
+  $easing-value: map-get($animation-easing, $easing);
+  
+  @if not $duration-value {
+    $duration-value: map-get($animation-duration, 'base');
+  }
+  
+  @if not $easing-value {
+    $easing-value: map-get($animation-easing, 'standard');
+  }
+  
+  @return #{$property} #{$duration-value} #{$easing-value};
+}
+
+// -----------------------------------------------------------------------------
+// ANIMATION UTILITY CLASSES
+// Reusable, accessible animation patterns
+// -----------------------------------------------------------------------------
+.motion-safe {
+  contain: layout paint;
+  
+  @include motion-safe {
+    &--enabled {
+      animation-duration: map-get($animation-duration, 'base');
+      animation-timing-function: map-get($animation-easing, 'standard');
+    }
+  }
+  
+  @include motion-reduce;
+}
+
+.fade {
+  @extend .motion-safe;
+  
+  &-in {
+    animation-name: fade-in;
+    animation-duration: map-get($animation-duration, 'base');
+    animation-timing-function: map-get($animation-easing, 'standard');
+    contain: layout paint;
+  }
+  
+  &-out {
+    animation-name: fade-out;
+    animation-duration: map-get($animation-duration, 'base');
+    animation-timing-function: map-get($animation-easing, 'standard');
+    contain: layout paint;
+  }
+}
+
+.slide {
+  @extend .motion-safe;
+  
+  &-up {
+    animation-name: slide-up;
+    animation-duration: map-get($animation-duration, 'base');
+    animation-timing-function: map-get($animation-easing, 'standard');
+    contain: layout paint;
+  }
+  
+  &-down {
+    animation-name: slide-down;
+    animation-duration: map-get($animation-duration, 'base');
+    animation-timing-function: map-get($animation-easing, 'standard');
+    contain: layout paint;
+  }
+}
+
+.scale {
+  @extend .motion-safe;
+  
+  &-in {
+    animation-name: scale-in;
+    animation-duration: map-get($animation-duration, 'base');
+    animation-timing-function: map-get($animation-easing, 'standard');
+    contain: layout paint;
+  }
+}
+
+// -----------------------------------------------------------------------------
+// LOADING SPINNER
+// Accessible loading indicator with ARIA support
+// -----------------------------------------------------------------------------
+.spinner {
+  @extend .motion-safe;
+  
+  &[aria-busy='true'] {
+    animation: rotate 1s linear infinite;
+    contain: layout paint;
+  }
+}
+
+// -----------------------------------------------------------------------------
+// EXPORTS
+// Make animation utilities available for importing
+// -----------------------------------------------------------------------------
+:export {
+  motion-safe: '.motion-safe';
+  fade: '.fade';
+  slide: '.slide';
+  scale: '.scale';
+  spinner: '.spinner';
+  generateTransition: generateTransition;
+}
