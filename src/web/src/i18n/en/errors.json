@@ -1,0 +1,122 @@
+{
+  "api": {
+    "default": "An unexpected error occurred. Please try again.",
+    "network": "Unable to connect to the server. Please check your internet connection.",
+    "timeout": "Request timed out. Please try again.",
+    "server": "Server error occurred. Please try again later.",
+    "notFound": "The requested resource was not found.",
+    "unauthorized": "You are not authorized to perform this action.",
+    "forbidden": "Access denied. You don't have permission to access this resource.",
+    "conflict": "A conflict occurred. Please refresh and try again.",
+    "rateLimited": "Too many requests. Please try again later.",
+    "maintenance": "System is currently under maintenance. Please try again in a few minutes."
+  },
+  "validation": {
+    "required": "{{field}} is required",
+    "email": "Please enter a valid email address",
+    "password": {
+      "length": "Password must be at least 8 characters long",
+      "complexity": "Password must include uppercase, lowercase, number, and special character",
+      "match": "Passwords do not match",
+      "history": "Password cannot be the same as your previous 5 passwords"
+    },
+    "task": {
+      "title": {
+        "required": "Task title is required",
+        "length": "Task title must be between 3 and 100 characters",
+        "format": "Task title can only contain letters, numbers, spaces, and basic punctuation",
+        "duplicate": "A task with this title already exists in the project"
+      },
+      "dueDate": {
+        "required": "Due date is required",
+        "future": "Due date must be in the future",
+        "invalid": "Please enter a valid date",
+        "range": "Due date must be within project timeline"
+      },
+      "description": {
+        "maxLength": "Description cannot exceed 2000 characters",
+        "format": "Description contains invalid formatting"
+      },
+      "attachments": {
+        "size": "File size cannot exceed 25MB",
+        "type": "Invalid file type. Allowed types: PDF, DOC, DOCX, JPG, PNG",
+        "count": "Maximum number of attachments (10) exceeded",
+        "duplicate": "File with this name already exists"
+      },
+      "assignee": {
+        "invalid": "Selected assignee is not a member of this project",
+        "unavailable": "Selected assignee is not available"
+      }
+    },
+    "project": {
+      "name": {
+        "required": "Project name is required",
+        "length": "Project name must be between 3 and 100 characters",
+        "format": "Project name can only contain letters, numbers, spaces, and basic punctuation",
+        "duplicate": "A project with this name already exists"
+      },
+      "dates": {
+        "endBeforeStart": "End date cannot be before start date",
+        "invalid": "Please enter valid dates",
+        "range": "Project duration cannot exceed 24 months"
+      },
+      "team": {
+        "size": "Project team must have at least one member",
+        "role": "Project must have at least one team leader"
+      }
+    }
+  },
+  "auth": {
+    "login": {
+      "failed": "Invalid email or password",
+      "inactive": "Your account is inactive. Please contact support.",
+      "locked": "Account locked due to multiple failed attempts. Please try again in 30 minutes.",
+      "expired": "Your session has expired. Please log in again.",
+      "concurrent": "Your account is already logged in on another device"
+    },
+    "register": {
+      "emailExists": "An account with this email already exists",
+      "failed": "Registration failed. Please try again.",
+      "domainRestricted": "Registration is restricted to approved email domains",
+      "inviteRequired": "Registration requires a valid invitation"
+    },
+    "mfa": {
+      "invalid": "Invalid verification code",
+      "expired": "Verification code has expired",
+      "required": "Two-factor authentication is required",
+      "attempts": "Too many invalid attempts. Please request a new code"
+    },
+    "passwordReset": {
+      "failed": "Password reset failed. Please try again.",
+      "expired": "Password reset link has expired",
+      "invalid": "Invalid password reset link",
+      "recent": "Password was recently changed. Please wait 24 hours before another reset"
+    }
+  },
+  "common": {
+    "unknown": "An unknown error occurred",
+    "maintenance": "System is under maintenance. Please try again later.",
+    "browserSupport": "Your browser is not supported. Please upgrade to a modern browser.",
+    "offline": "You are offline. Please check your internet connection.",
+    "fileUpload": {
+      "failed": "File upload failed. Please try again.",
+      "canceled": "File upload was canceled",
+      "invalid": "Invalid file",
+      "quota": "Storage quota exceeded",
+      "virus": "File failed security scan"
+    },
+    "form": {
+      "invalid": "Please check your input and try again",
+      "submit": "Form submission failed. Please try again.",
+      "unchanged": "No changes to save",
+      "concurrent": "This form was modified by another user"
+    },
+    "accessibility": {
+      "error": "Error",
+      "warning": "Warning",
+      "info": "Information",
+      "success": "Success"
+    }
+  },
+  "TRANSLATION_VERSION": "1.0.0"
+}
