@@ -1,0 +1,151 @@
+{
+  "metadata": {
+    "locale": "en",
+    "version": "1.0.0",
+    "lastUpdated": "2024-01-01",
+    "namespace": "forms"
+  },
+  "common": {
+    "loading": "Loading...",
+    "saving": "Saving...",
+    "submitting": "Submitting...",
+    "success": "Success!",
+    "error": "Error",
+    "required": "Required",
+    "optional": "Optional",
+    "cancel": "Cancel",
+    "confirm": "Confirm",
+    "back": "Back",
+    "next": "Next",
+    "finish": "Finish",
+    "dateFormat": "MM/DD/YYYY",
+    "timeFormat": "hh:mm A",
+    "notifications": {
+      "saveSuccess": "Changes saved successfully",
+      "saveError": "Failed to save changes",
+      "validationError": "Please correct the errors before submitting"
+    }
+  },
+  "aria": {
+    "required": "This field is required",
+    "optional": "This field is optional",
+    "error": "Error: {{message}}",
+    "success": "Success: {{message}}",
+    "loading": "Please wait while {{action}}",
+    "navigation": {
+      "next": "Go to next step",
+      "previous": "Go to previous step",
+      "submit": "Submit form",
+      "cancel": "Cancel form"
+    },
+    "fileUpload": {
+      "dragDrop": "Drag and drop area. Press space or enter to open file browser",
+      "browse": "Press to browse files",
+      "selected": "{{count}} files selected"
+    }
+  },
+  "auth": {
+    "login": {
+      "title": "Login",
+      "description": "Sign in to your account",
+      "email": {
+        "label": "Email",
+        "placeholder": "Enter your email",
+        "help": "Enter the email address associated with your account",
+        "aria": {
+          "label": "Email input field",
+          "invalid": "Email address is invalid"
+        }
+      },
+      "password": {
+        "label": "Password",
+        "placeholder": "Enter your password",
+        "help": "Enter your account password",
+        "aria": {
+          "label": "Password input field",
+          "show": "Show password",
+          "hide": "Hide password"
+        }
+      },
+      "rememberMe": "Remember me",
+      "forgotPassword": "Forgot password?",
+      "submit": "Login",
+      "registerLink": "Don't have an account? Register",
+      "success": "Successfully logged in",
+      "error": "Login failed: {{message}}"
+    }
+  },
+  "project": {
+    "create": {
+      "title": "Create Project",
+      "description": "Create a new project and set its initial properties",
+      "steps": {
+        "basic": "Basic Information",
+        "team": "Team Setup",
+        "review": "Review"
+      },
+      "name": {
+        "label": "Project Name",
+        "placeholder": "Enter project name",
+        "help": "Choose a unique and descriptive name",
+        "aria": {
+          "label": "Project name input field",
+          "invalid": "Project name is invalid"
+        }
+      }
+    }
+  },
+  "task": {
+    "create": {
+      "title": "Create Task",
+      "description": "Create a new task and assign it to a team member",
+      "sections": {
+        "basic": "Basic Information",
+        "details": "Task Details",
+        "assignments": "Assignments"
+      },
+      "name": {
+        "label": "Task Title",
+        "placeholder": "Enter task title",
+        "help": "Provide a clear and concise title",
+        "aria": {
+          "label": "Task title input field",
+          "invalid": "Task title is invalid"
+        }
+      }
+    }
+  },
+  "validation": {
+    "required": "{{field}} is required",
+    "email": {
+      "format": "Please enter a valid email address",
+      "unique": "This email is already registered",
+      "domain": "Please use your company email address"
+    },
+    "password": {
+      "length": "Password must be {{min}}-{{max}} characters long",
+      "pattern": "Password must contain at least one uppercase letter, one lowercase letter, one number and one special character",
+      "match": "Passwords do not match",
+      "history": "Cannot use a recently used password"
+    },
+    "name": {
+      "minLength": "{{field}} must be at least {{min}} characters",
+      "maxLength": "{{field}} must be at most {{max}} characters",
+      "pattern": "{{field}} can only contain letters, numbers, dashes and underscores",
+      "unique": "This {{field}} is already taken"
+    },
+    "date": {
+      "format": "Please enter date in format {{format}}",
+      "future": "{{field}} must be a future date",
+      "past": "{{field}} must be a past date",
+      "range": "{{field}} must be between {{start}} and {{end}}",
+      "startEnd": "End date must be after start date"
+    },
+    "file": {
+      "size": "File size must be less than {{size}}MB",
+      "type": "File type must be one of: {{types}}",
+      "count": "Maximum {{max}} files allowed",
+      "dimensions": "Image dimensions must be {{width}}x{{height}} pixels"
+    }
+  }
+}
