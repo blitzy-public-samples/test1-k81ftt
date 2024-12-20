@@ -1,0 +1,111 @@
+# Prometheus Recording Rules Configuration
+# Version: 2.45.0
+# Purpose: Pre-compute frequently used metrics and aggregations for efficient querying
+
+groups:
+  # API Performance and Reliability Metrics
+  - name: api_metrics
+    interval: 1m
+    rules:
+      # P95 API Request Duration by Service and Endpoint
+      - record: instance:api_request_duration_seconds:p95
+        expr: histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket{job="api-services"}[5m])) by (le, service, endpoint))
+        labels:
+          category: performance
+          slo_target: "0.5"
+
+      # API Error Rate by Service
+      - record: instance:api_error_rate:ratio
+        expr: |
+          sum(rate(http_requests_total{job="api-services", status_code=~"5..|4.."}[5m])) by (service)
+          /
+          sum(rate(http_requests_total{job="api-services"}[5m])) by (service)
+        labels:
+          category: reliability
+          slo_target: "0.001"
+
+      # API Service Availability Percentage
+      - record: instance:api_availability:percentage
+        expr: |
+          (1 - (
+            sum(rate(http_requests_total{job="api-services", status_code=~"5.."}[5m]))
+            /
+            sum(rate(http_requests_total{job="api-services"}[5m]))
+          )) * 100
+        labels:
+          category: sla
+          slo_target: "99.9"
+
+  # System Resource Utilization Metrics
+  - name: system_metrics
+    interval: 1m
+    rules:
+      # CPU Usage Rate (5m average)
+      - record: instance:node_cpu_usage:rate5m
+        expr: 100 - (avg by (instance) (rate(node_cpu_seconds_total{mode="idle"}[5m])) * 100)
+        labels:
+          category: resource
+          threshold: "80"
+
+      # Memory Usage Percentage
+      - record: instance:node_memory_usage:percentage
+        expr: (1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) * 100
+        labels:
+          category: resource
+          threshold: "85"
+
+      # Disk Usage Percentage
+      - record: instance:node_disk_usage:percentage
+        expr: (1 - node_filesystem_avail_bytes{mountpoint="/"} / node_filesystem_size_bytes{mountpoint="/"}) * 100
+        labels:
+          category: resource
+          threshold: "90"
+
+  # Business KPI Metrics
+  - name: business_metrics
+    interval: 1m
+    rules:
+      # Task Completion Rate
+      - record: instance:task_completion_rate:ratio
+        expr: sum(rate(task_completed_total[1h])) / sum(rate(task_created_total[1h]))
+        labels:
+          category: business
+          target: "0.8"
+
+      # Project Progress Percentage
+      - record: instance:project_progress:percentage
+        expr: sum by (project_id) (task_completed_total) / sum by (project_id) (task_total) * 100
+        labels:
+          category: business
+          target: "100"
+
+      # User Activity Rate (5m average)
+      - record: instance:user_activity:rate5m
+        expr: rate(user_action_total[5m])
+        labels:
+          category: business
+
+  # Security Monitoring Metrics
+  - name: security_metrics
+    interval: 1m
+    rules:
+      # Failed Login Rate (5m average)
+      - record: instance:failed_login_rate:rate5m
+        expr: rate(auth_failed_logins_total[5m])
+        labels:
+          category: security
+          threshold: "10"
+
+      # Unauthorized Access Rate (5m average)
+      - record: instance:unauthorized_access_rate:rate5m
+        expr: rate(http_requests_total{status="403"}[5m])
+        labels:
+          category: security
+          threshold: "5"
+
+      # Suspicious Activity Rate (15m average)
+      - record: instance:suspicious_activity:rate15m
+        expr: sum(rate(security_incident_total{severity=~"high|critical"}[15m]))
+        labels:
+          category: security
+          threshold: "1"
