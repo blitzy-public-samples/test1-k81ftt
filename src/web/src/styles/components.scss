@@ -1,0 +1,333 @@
+// =============================================================================
+// COMPONENT STYLES
+// Material Design 3 Implementation
+// Version: 1.0.0
+// =============================================================================
+
+@import './variables';
+@import './mixins';
+
+// -----------------------------------------------------------------------------
+// BUTTON COMPONENTS
+// Enterprise-grade button variants with enhanced states and accessibility
+// -----------------------------------------------------------------------------
+
+.btn {
+  height: 36px;
+  padding: 0 16px;
+  border-radius: $border-radius-base;
+  @include focus-visible;
+  @include reduced-motion;
+  cursor: pointer;
+  font-weight: 500;
+  text-align: center;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+  gap: spacing('sm');
+  
+  // Button variants
+  &--contained {
+    background: var(--primary);
+    color: var(--on-primary);
+    border: none;
+    @include elevation('level-1');
+    
+    &:hover {
+      @include state-layer('hover');
+      @include elevation('level-2');
+    }
+    
+    &:active {
+      @include state-layer('pressed');
+    }
+  }
+  
+  &--outlined {
+    background: transparent;
+    border: 1px solid var(--primary);
+    color: var(--primary);
+    
+    &:hover {
+      @include state-layer('hover', var(--primary));
+    }
+    
+    &:active {
+      @include state-layer('pressed', var(--primary));
+    }
+  }
+  
+  &--text {
+    background: transparent;
+    border: none;
+    color: var(--primary);
+    padding: 0 8px;
+    
+    &:hover {
+      @include state-layer('hover', var(--primary));
+    }
+  }
+  
+  // Loading state
+  &--loading {
+    pointer-events: none;
+    
+    &::after {
+      content: "";
+      position: absolute;
+      width: 16px;
+      height: 16px;
+      border: 2px solid currentColor;
+      border-radius: 50%;
+      border-right-color: transparent;
+      animation: spin 1s linear infinite;
+    }
+  }
+  
+  // Disabled state
+  &:disabled {
+    opacity: map-get($state-colors, 'disabled-opacity');
+    pointer-events: none;
+  }
+}
+
+// -----------------------------------------------------------------------------
+// FORM CONTROLS
+// Accessible form elements with validation states
+// -----------------------------------------------------------------------------
+
+.form-control {
+  height: 40px;
+  padding: 8px 12px;
+  border-radius: $border-radius-base;
+  border: 1px solid var(--outline);
+  background: var(--surface);
+  width: 100%;
+  @include fluid-type(14, 16);
+  line-height: $line-height-base;
+  transition: border-color $transition-duration map-get($animation-curves, 'standard');
+  @include focus-visible;
+  
+  &--invalid {
+    border-color: var(--error);
+    
+    & + .helper-text {
+      color: var(--error);
+    }
+  }
+  
+  &--with-label {
+    padding-top: 16px;
+  }
+  
+  & + .floating-label {
+    position: absolute;
+    top: 8px;
+    left: 12px;
+    @include fluid-type(12, 14);
+    color: var(--on-surface-variant);
+    transition: all $transition-duration map-get($animation-curves, 'standard');
+    pointer-events: none;
+  }
+  
+  &:focus + .floating-label,
+  &:not(:placeholder-shown) + .floating-label {
+    transform: translateY(-12px) scale(0.75);
+    color: var(--primary);
+  }
+}
+
+// -----------------------------------------------------------------------------
+// CARD COMPONENTS
+// Material cards with elevation and interactive states
+// -----------------------------------------------------------------------------
+
+.card {
+  padding: 16px;
+  border-radius: 8px;
+  background: var(--surface);
+  transition: transform $transition-duration map-get($animation-curves, 'standard'),
+              box-shadow $transition-duration map-get($animation-curves, 'standard');
+  
+  &--elevation-1 {
+    @include elevation('level-1');
+  }
+  
+  &--elevation-2 {
+    @include elevation('level-2');
+  }
+  
+  &--interactive {
+    cursor: pointer;
+    
+    &:hover {
+      transform: translateY(-2px);
+      @include elevation('level-2');
+    }
+    
+    &:active {
+      transform: translateY(0);
+      @include elevation('level-1');
+    }
+  }
+  
+  &--with-media {
+    padding: 0;
+    overflow: hidden;
+    
+    .card__media {
+      width: 100%;
+      height: 200px;
+      object-fit: cover;
+    }
+    
+    .card__content {
+      padding: 16px;
+    }
+  }
+  
+  // Responsive adjustments
+  @include breakpoint('xs') {
+    width: 100%;
+  }
+  
+  @include breakpoint('sm') {
+    width: calc(50% - #{spacing('lg')});
+  }
+  
+  @include breakpoint('md') {
+    width: calc(33.333% - #{spacing('lg')});
+  }
+}
+
+// -----------------------------------------------------------------------------
+// NAVIGATION COMPONENTS
+// Responsive navigation elements with accessibility
+// -----------------------------------------------------------------------------
+
+.nav {
+  height: 64px;
+  width: 100%;
+  background: var(--surface);
+  @include elevation('level-2');
+  position: sticky;
+  top: 0;
+  z-index: map-get($z-index-tokens, 'header');
+  
+  &__container {
+    @include container;
+    @include flex-layout(row, space-between, center);
+    height: 100%;
+  }
+  
+  &__menu {
+    @include flex-layout(row, flex-start, center, spacing('lg'));
+    
+    @include breakpoint('xs') {
+      display: none;
+      
+      &--mobile {
+        display: flex;
+        flex-direction: column;
+        position: fixed;
+        top: 64px;
+        left: 0;
+        right: 0;
+        background: var(--surface);
+        padding: spacing('lg');
+        @include elevation('level-2');
+      }
+    }
+  }
+}
+
+// -----------------------------------------------------------------------------
+// SIDEBAR COMPONENT
+// Collapsible sidebar with responsive behavior
+// -----------------------------------------------------------------------------
+
+.sidebar {
+  width: 280px;
+  height: 100vh;
+  background: var(--surface);
+  position: fixed;
+  left: 0;
+  top: 0;
+  @include elevation('level-2');
+  transition: transform $transition-duration map-get($animation-curves, 'standard');
+  
+  @include breakpoint('xs') {
+    transform: translateX(-100%);
+    
+    &--open {
+      transform: translateX(0);
+    }
+  }
+  
+  &__content {
+    height: 100%;
+    overflow-y: auto;
+    padding: spacing('lg');
+    
+    // Scrollbar styling
+    &::-webkit-scrollbar {
+      width: 8px;
+    }
+    
+    &::-webkit-scrollbar-track {
+      background: var(--surface-variant);
+    }
+    
+    &::-webkit-scrollbar-thumb {
+      background: var(--on-surface-variant);
+      border-radius: 4px;
+    }
+  }
+}
+
+// -----------------------------------------------------------------------------
+// ANIMATIONS
+// Reduced motion compliant animations
+// -----------------------------------------------------------------------------
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+// -----------------------------------------------------------------------------
+// UTILITY CLASSES
+// Common utility classes for layout and spacing
+// -----------------------------------------------------------------------------
+
+.elevation {
+  @for $i from 0 through 3 {
+    &-#{$i} {
+      @include elevation('level-#{$i}');
+    }
+  }
+}
+
+.spacing {
+  @each $size, $scale in $spacing-scale {
+    &-#{$size} {
+      margin: spacing($size);
+      
+      &-x {
+        margin-left: spacing($size);
+        margin-right: spacing($size);
+      }
+      
+      &-y {
+        margin-top: spacing($size);
+        margin-bottom: spacing($size);
+      }
+    }
+  }
+}
