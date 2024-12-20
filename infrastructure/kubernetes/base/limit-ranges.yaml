@@ -1,0 +1,42 @@
+# Kubernetes LimitRange configuration for task management system
+# Defines container-level resource constraints based on service requirements
+# Version: v1
+apiVersion: v1
+kind: LimitRange
+metadata:
+  name: taskmanagement-limits
+  namespace: taskmanagement
+  labels:
+    app.kubernetes.io/name: taskmanagement
+    app.kubernetes.io/part-of: task-management-system
+    app.kubernetes.io/managed-by: kustomize
+spec:
+  limits:
+    # Container resource limits based on service specifications:
+    # Frontend: 0.5-1.0 CPU, 512MB-1GB Memory
+    # API Services: 1.0-2.0 CPU, 1GB-2GB Memory
+    # Analytics Services: 1.0-2.0 CPU, 2GB-4GB Memory
+    - type: Container
+      # Default resource allocation if not specified
+      default:
+        cpu: "1"    # 1 CPU core
+        memory: 1Gi # 1GB memory
+      # Default resource requests if not specified
+      defaultRequest:
+        cpu: "0.5"    # 0.5 CPU core
+        memory: 512Mi # 512MB memory
+      # Minimum resource constraints
+      min:
+        cpu: "0.1"    # 0.1 CPU core minimum
+        memory: 128Mi # 128MB minimum memory
+      # Maximum resource constraints
+      max:
+        cpu: "4"    # 4 CPU cores maximum
+        memory: 8Gi # 8GB maximum memory
+    
+    # PersistentVolumeClaim size limits for storage requirements
+    - type: PersistentVolumeClaim
+      min:
+        storage: 1Gi  # Minimum storage request of 1GB
+      max:
+        storage: 50Gi # Maximum storage request of 50GB
