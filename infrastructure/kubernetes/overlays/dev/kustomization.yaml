@@ -1,0 +1,127 @@
+# Kustomization configuration for Task Management System Development Environment
+# Version: v1beta1
+# Purpose: Development environment overlay with debug capabilities and resource optimization
+
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# Development namespace with suffix
+namespace: taskmanagement-dev
+
+# Common labels for all resources in development environment
+commonLabels:
+  environment: development
+  app.kubernetes.io/environment: development
+  debug.taskmanagement.com/enabled: "true"
+  app.kubernetes.io/managed-by: kustomize
+  app.kubernetes.io/part-of: task-management-system
+
+# Development-specific annotations
+commonAnnotations:
+  environment.taskmanagement.com/name: development
+  environment.taskmanagement.com/type: non-production
+  debug.taskmanagement.com/level: verbose
+  monitoring.taskmanagement.com/enhanced: "true"
+  deployment.taskmanagement.com/sandbox: "true"
+
+# Base resources to be customized
+resources:
+  - ../../base/namespace.yaml
+  - ../../base/configmap.yaml
+  - ../../base/secrets.yaml
+  - ../../base/service-accounts.yaml
+  - ../../base/network-policies.yaml
+  - ../../base/resource-quotas.yaml
+  - ../../base/limit-ranges.yaml
+  - ../../base/horizontal-pod-autoscaler.yaml
+  - ../../base/ingress.yaml
+
+# Development-specific patches
+patches:
+  # Namespace customization for development
+  - path: patches/namespace-dev.yaml
+    target:
+      kind: Namespace
+      name: taskmanagement
+
+  # ConfigMap customization for development
+  - path: patches/configmap-dev.yaml
+    target:
+      kind: ConfigMap
+      name: app-config
+
+  # Ingress customization for development endpoints
+  - path: patches/ingress-dev.yaml
+    target:
+      kind: Ingress
+      name: task-management-ingress
+
+# Development environment uses single replica for cost optimization
+replicas:
+  - name: ".*"
+    count: 1
+
+# Development-specific image tags
+images:
+  - name: task-management-api
+    newTag: dev
+  - name: task-management-web
+    newTag: dev
+
+# Development environment specific configuration
+configMapGenerator:
+  - name: dev-specific-config
+    behavior: create
+    literals:
+      # Environment settings
+      - NODE_ENV=development
+      - LOG_LEVEL=debug
+      - ENVIRONMENT=development
+      
+      # Development URLs
+      - API_URL=https://api-dev.taskmanagement.com
+      - WEB_URL=https://web-dev.taskmanagement.com
+      
+      # Debug settings
+      - ENABLE_DEBUG_ENDPOINTS=true
+      - ENABLE_VERBOSE_LOGGING=true
+      - ENABLE_PERFORMANCE_MONITORING=true
+      
+      # Development-specific timeouts
+      - API_TIMEOUT=30s
+      - LONG_RUNNING_TIMEOUT=300s
+      
+      # Resource optimization
+      - MAX_MEMORY_REQUEST=512Mi
+      - MAX_CPU_REQUEST=500m
+      
+      # Development tools
+      - ENABLE_SWAGGER=true
+      - ENABLE_DEBUG_TOOLS=true
+      - ENABLE_METRICS_DEBUGGING=true
+      
+      # Security settings for development
+      - DISABLE_RATE_LIMITING=true
+      - ALLOW_CORS_ALL=true
+      - ENABLE_DEBUG_HEADERS=true
+
+  # Development-specific service configuration
+  - name: dev-service-config
+    behavior: create
+    literals:
+      # Service discovery settings
+      - SERVICE_REGISTRY_ENABLED=true
+      - SERVICE_DISCOVERY_MODE=development
+      
+      # Monitoring settings
+      - METRICS_SCRAPE_INTERVAL=15s
+      - TRACE_SAMPLING_RATE=1.0
+      
+      # Cache settings
+      - CACHE_MODE=local
+      - CACHE_TTL=300
+      
+      # Development-specific feature flags
+      - FEATURE_DEBUG_MODE=enabled
+      - FEATURE_MOCK_SERVICES=enabled
+      - FEATURE_PERFORMANCE_TRACKING=enabled
