@@ -1,0 +1,248 @@
+# Enterprise Continuous Deployment Workflow
+# Version: 1.0.0
+name: Enterprise Continuous Deployment
+
+# Workflow triggers based on CI/Security scan completion and manual dispatch
+on:
+  workflow_run:
+    workflows: ['Continuous Integration', 'Security Scan']
+    types: [completed]
+    branches: ['main', 'release/*']
+  workflow_dispatch:
+    inputs:
+      environment:
+        type: string
+        description: 'Deployment environment'
+        required: true
+        default: 'development'
+
+# Concurrency control to prevent deployment conflicts
+concurrency:
+  group: cd-${{ github.ref }}
+  cancel-in-progress: false
+
+# Required permissions following principle of least privilege
+permissions:
+  contents: read
+  id-token: write
+  deployments: write
+  security-events: read
+
+# Environment variables for deployment configuration
+env:
+  DEPLOY_TIMEOUT: '600s'
+  HEALTH_CHECK_RETRIES: '10'
+  CANARY_STEP_WEIGHT: '10'
+  METRIC_THRESHOLD_CPU: '80'
+  METRIC_THRESHOLD_MEMORY: '85'
+  METRIC_THRESHOLD_LATENCY: '500'
+
+jobs:
+  # Development Environment Deployment
+  deploy_development:
+    name: Deploy to Development
+    runs-on: ubuntu-latest
+    environment:
+      name: development
+      url: https://dev.taskmanagement.com
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Azure login with OIDC
+        uses: azure/login@v1
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Set AKS context
+        uses: azure/aks-set-context@v3
+        with:
+          cluster-name: ${{ secrets.AZURE_AKS_CLUSTER }}
+          resource-group: ${{ secrets.AZURE_RESOURCE_GROUP }}
+          admin: 'false'
+          use-kubelogin: 'true'
+
+      - name: Generate Kubernetes manifests
+        uses: azure/k8s-bake@v2
+        with:
+          renderEngine: 'kustomize'
+          kustomizationPath: 'infrastructure/kubernetes/overlays/development'
+          kubectl-version: 'latest'
+
+      - name: Deploy to development
+        uses: azure/k8s-deploy@v4
+        with:
+          namespace: ${{ env.DEPLOYMENT_NAMESPACE }}
+          manifests: ${{ steps.bake.outputs.manifestsBundle }}
+          strategy: basic
+          action: deploy
+          images: |
+            ${{ secrets.ACR_REGISTRY }}/backend:${{ github.sha }}
+            ${{ secrets.ACR_REGISTRY }}/frontend:${{ github.sha }}
+
+      - name: Verify deployment health
+        run: |
+          for i in $(seq 1 ${{ env.HEALTH_CHECK_RETRIES }}); do
+            if curl -f ${{ env.HEALTH_CHECK_ENDPOINT }}; then
+              exit 0
+            fi
+            sleep 10
+          done
+          exit 1
+
+  # Staging Environment Deployment with Blue-Green Strategy
+  deploy_staging:
+    name: Deploy to Staging
+    needs: [deploy_development]
+    runs-on: ubuntu-latest
+    environment:
+      name: staging
+      url: https://staging.taskmanagement.com
+    
+    steps:
+      - name: Azure login with OIDC
+        uses: azure/login@v1
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Set AKS context
+        uses: azure/aks-set-context@v3
+        with:
+          cluster-name: ${{ secrets.AZURE_AKS_CLUSTER }}
+          resource-group: ${{ secrets.AZURE_RESOURCE_GROUP }}
+
+      - name: Deploy blue environment
+        uses: azure/k8s-deploy@v4
+        with:
+          namespace: staging
+          manifests: |
+            infrastructure/kubernetes/overlays/staging/blue
+          strategy: blue-green
+          action: deploy
+          traffic-split-method: pod
+          percentage: 0
+
+      - name: Verify blue deployment
+        run: |
+          ./scripts/verify-deployment.sh blue
+          ./scripts/run-smoke-tests.sh blue
+
+      - name: Progressive traffic shift
+        uses: azure/k8s-deploy@v4
+        with:
+          namespace: staging
+          manifests: |
+            infrastructure/kubernetes/overlays/staging/blue
+          strategy: blue-green
+          action: promote
+          traffic-split-method: pod
+          percentage: 100
+
+  # Production Environment Deployment with Canary Strategy
+  deploy_production:
+    name: Deploy to Production
+    needs: [deploy_staging]
+    runs-on: ubuntu-latest
+    environment:
+      name: production
+      url: https://taskmanagement.com
+    
+    steps:
+      - name: Azure login with OIDC
+        uses: azure/login@v1
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Set AKS context
+        uses: azure/aks-set-context@v3
+        with:
+          cluster-name: ${{ secrets.AZURE_AKS_CLUSTER }}
+          resource-group: ${{ secrets.AZURE_RESOURCE_GROUP }}
+
+      - name: Initialize canary deployment
+        uses: azure/k8s-deploy@v4
+        with:
+          namespace: production
+          manifests: |
+            infrastructure/kubernetes/overlays/production/canary
+          strategy: canary
+          action: deploy
+          percentage: ${{ env.CANARY_STEP_WEIGHT }}
+
+      - name: Monitor canary metrics
+        run: |
+          ./scripts/monitor-canary.sh \
+            --cpu-threshold ${{ env.METRIC_THRESHOLD_CPU }} \
+            --memory-threshold ${{ env.METRIC_THRESHOLD_MEMORY }} \
+            --latency-threshold ${{ env.METRIC_THRESHOLD_LATENCY }}
+
+      - name: Progressive canary rollout
+        uses: azure/k8s-deploy@v4
+        with:
+          namespace: production
+          manifests: |
+            infrastructure/kubernetes/overlays/production/canary
+          strategy: canary
+          action: promote
+          percentage: 100
+
+      - name: Rollback on failure
+        if: failure()
+        uses: azure/k8s-deploy@v4
+        with:
+          namespace: production
+          manifests: |
+            infrastructure/kubernetes/overlays/production/stable
+          strategy: canary
+          action: reject
+
+      - name: Update status page
+        if: always()
+        run: |
+          curl -X POST ${{ secrets.STATUS_PAGE_API }} \
+            -H "Authorization: Bearer ${{ secrets.STATUS_PAGE_TOKEN }}" \
+            -d '{"status": "${{ job.status }}"}'
+
+  # Notification job for deployment status
+  notify:
+    name: Send Notifications
+    needs: [deploy_production]
+    runs-on: ubuntu-latest
+    if: always()
+    
+    steps:
+      - name: Notify Slack
+        uses: slackapi/slack-github-action@v1
+        with:
+          channel-id: 'deployments'
+          slack-message: |
+            Deployment Status: ${{ needs.deploy_production.result }}
+            Environment: Production
+            Commit: ${{ github.sha }}
+            Workflow: ${{ github.workflow }}
+        env:
+          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+
+      - name: Create GitHub Deployment Status
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const status = '${{ needs.deploy_production.result }}' === 'success' ? 'success' : 'failure';
+            await github.rest.repos.createDeploymentStatus({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              deployment_id: context.payload.deployment.id,
+              state: status,
+              environment_url: 'https://taskmanagement.com',
+              log_url: `https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`,
+              description: `Deployment ${status}`
+            });
