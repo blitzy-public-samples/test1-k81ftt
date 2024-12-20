@@ -1,0 +1,133 @@
+# Alertmanager Configuration v0.25.0
+# Enterprise-grade alert management system for Prometheus alerts
+# Implements sophisticated routing, grouping, and multi-channel notifications
+
+global:
+  # Global timeout for resolved alerts
+  resolve_timeout: 5m
+
+  # SMTP Configuration
+  smtp_from: alertmanager@company.com
+  smtp_smarthost: smtp.company.com:587
+  smtp_auth_username: alertmanager
+  smtp_auth_identity: alertmanager
+  smtp_auth_password_file: /etc/alertmanager/secrets/smtp-password
+  
+  # Slack webhook configuration
+  slack_api_url_file: /etc/alertmanager/secrets/slack-webhook-url
+
+# Custom notification templates
+templates:
+  - /etc/alertmanager/templates/*.tmpl
+
+# Root routing tree configuration
+route:
+  # Default receiver for unmatched alerts
+  receiver: default
+  
+  # Intelligent alert grouping
+  group_by: 
+    - alertname
+    - cluster
+    - service
+    - category
+  
+  # Timing configurations for initial grouping
+  group_wait: 30s
+  group_interval: 5m
+  repeat_interval: 4h
+
+  # Specialized routing configurations
+  routes:
+    # High-priority security alerts routing
+    - match:
+        severity: critical
+        category: security
+      receiver: security-team
+      group_wait: 0s  # Immediate notification for security issues
+      repeat_interval: 15m  # Frequent reminders for security incidents
+      continue: true  # Allow matching with other routes
+
+    # Critical infrastructure alerts routing
+    - match:
+        severity: critical
+        category: infrastructure
+      receiver: ops-team
+      group_wait: 30s
+      repeat_interval: 30m
+
+    # Business-related warning alerts routing
+    - match:
+        severity: warning
+        category: business
+      receiver: business-team
+      group_wait: 1m
+      repeat_interval: 2h
+
+    # General warning and critical alerts to Slack
+    - match_re:
+        severity: warning|critical
+      receiver: slack-notifications
+      group_wait: 30s
+      repeat_interval: 1h
+
+# Alert suppression rules
+inhibit_rules:
+  # Suppress warning alerts when critical alert exists for same issue
+  - source_match:
+      severity: critical
+    target_match:
+      severity: warning
+    equal:
+      - alertname
+      - cluster
+      - service
+      - category
+
+# Notification receivers configuration
+receivers:
+  # Default receiver - general alerts
+  - name: default
+    email_configs:
+      - to: team@company.com
+        send_resolved: true
+        require_tls: true
+
+  # Security team receiver - high priority security alerts
+  - name: security-team
+    email_configs:
+      - to: security@company.com
+        send_resolved: true
+        require_tls: true
+        priority: high
+    pagerduty_configs:
+      - service_key_file: /etc/alertmanager/secrets/pagerduty-security-key
+        send_resolved: true
+        severity: critical
+
+  # Operations team receiver - infrastructure alerts
+  - name: ops-team
+    email_configs:
+      - to: ops@company.com
+        send_resolved: true
+        require_tls: true
+    slack_configs:
+      - channel: '#ops-alerts'
+        send_resolved: true
+        title: '{{ .GroupLabels.alertname }}'
+        text: '{{ .CommonAnnotations.description }}'
+
+  # Business team receiver - business-related alerts
+  - name: business-team
+    email_configs:
+      - to: business@company.com
+        send_resolved: true
+        require_tls: true
+
+  # Slack notifications - general alert channel
+  - name: slack-notifications
+    slack_configs:
+      - channel: '#alerts'
+        send_resolved: true
+        title: '{{ .GroupLabels.alertname }}'
+        text: '{{ .CommonAnnotations.description }}'
