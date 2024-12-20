@@ -1,0 +1,83 @@
+# Dependencies
+node_modules/
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# Build outputs
+dist/
+build/
+*.tsbuildinfo
+tsconfig.tsbuildinfo
+
+# Development tools and configurations
+.eslintrc*
+.prettierrc*
+.editorconfig
+nodemon.json
+jest.config.ts
+.vscode/
+.idea/
+
+# Test files and coverage reports
+tests/
+__tests__/
+**/*.test.ts
+**/*.spec.ts
+coverage/
+.nyc_output/
+
+# Version control
+.git/
+.gitignore
+.gitattributes
+
+# Environment and secrets
+.env*
+.env.local
+.env.*.local
+*.key
+*.pem
+*.cert
+*.crt
+*.p12
+
+# Logs and debugging
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Documentation
+*.md
+docs/
+CHANGELOG*
+LICENSE
+AUTHORS
+
+# Development container configurations
+docker-compose*.yml
+docker-compose*.yaml
+Dockerfile.dev
+
+# Temporary files
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# IDE specific files
+.idea/
+.vscode/
+*.sublime-*
+*.code-workspace
+
+# Miscellaneous
+.tmp/
+.temp/
+*.bak
+*.cache
+.npmrc
+.yarnrc
+.pnpmrc
