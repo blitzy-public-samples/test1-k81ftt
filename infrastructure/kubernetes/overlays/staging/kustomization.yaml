@@ -1,0 +1,68 @@
+# kustomize v5.0.0
+# Staging environment Kustomize configuration for Task Management System
+# Implements blue-green deployment strategy with resource management and scaling
+
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# Define staging namespace for environment isolation
+namespace: taskmanagement-staging
+namePrefix: staging-
+
+# Common labels for all resources in staging environment
+commonLabels:
+  environment: staging
+  app.kubernetes.io/environment: staging
+  app.kubernetes.io/managed-by: kustomize
+  deployment.taskmanagement.io/type: blue-green
+
+# Environment-specific annotations
+commonAnnotations:
+  environment.taskmanagement.io/name: staging
+  environment.taskmanagement.io/type: testing
+  environment.taskmanagement.io/owner: devops-team
+  deployment.taskmanagement.io/strategy: blue-green
+  monitoring.taskmanagement.io/enabled: "true"
+
+# Base resources to be customized
+resources:
+  - ../../base
+
+# Apply environment-specific patches
+patches:
+  # Resource quotas for staging environment
+  - path: patches/resource-quotas.yaml
+    target:
+      kind: ResourceQuota
+      name: ".*"
+  # Horizontal Pod Autoscaling configuration
+  - path: patches/hpa.yaml
+    target:
+      kind: HorizontalPodAutoscaler
+      name: ".*"
+
+# Generate environment-specific ConfigMaps
+configMapGenerator:
+  - name: app-config
+    behavior: merge
+    literals:
+      - NODE_ENV=staging
+      - LOG_LEVEL=debug
+      - CORS_ORIGIN=https://staging.taskmanagement.io
+      - RATE_LIMIT_MAX=200
+      - MONITORING_ENABLED=true
+      - TRACING_ENABLED=true
+
+# Container image configuration for staging
+images:
+  - name: taskmanagement/api
+    newTag: staging
+  - name: taskmanagement/web
+    newTag: staging
+
+# Replica configuration for staging environment
+replicas:
+  - name: api-deployment
+    count: 3
+  - name: web-deployment
+    count: 2
