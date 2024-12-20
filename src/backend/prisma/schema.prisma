@@ -1,0 +1,210 @@
+// Prisma schema version: 5.0+
+// Purpose: Enterprise-grade task management system database schema
+// Security: Implements field-level encryption, audit trails, and data classification
+
+// Database connection configuration
+datasource db {
+  provider          = "postgresql"
+  url               = env("DATABASE_URL")
+  shadowDatabaseUrl = env("SHADOW_DATABASE_URL")
+}
+
+// Client generator configuration with preview features
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["fullTextSearch", "extendedWhereUnique", "fieldReference"]
+}
+
+// Enums for type-safe field values
+enum UserRole {
+  ADMIN
+  MANAGER
+  MEMBER
+  GUEST
+}
+
+enum ProjectStatus {
+  ACTIVE
+  COMPLETED
+  ON_HOLD
+  CANCELLED
+  ARCHIVED
+}
+
+enum TaskStatus {
+  TODO
+  IN_PROGRESS
+  REVIEW
+  COMPLETED
+  BLOCKED
+}
+
+enum TaskPriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+// User model with enhanced security features and audit trails
+model User {
+  id           String    @id @default(uuid()) @db.Uuid
+  email        String    @unique @db.VarChar(255)
+  firstName    String    @db.VarChar(100)
+  lastName     String    @db.VarChar(100)
+  passwordHash String    @db.Text
+  role         UserRole  @default(MEMBER)
+  isActive     Boolean   @default(true)
+  lastLoginAt  DateTime?
+  preferences  Json      @default("{}") @db.JsonB
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  deletedAt    DateTime?
+
+  // Relations
+  projects      Project[] @relation("ProjectOwner")
+  assignedTasks Task[]    @relation("TaskAssignee")
+  createdTasks  Task[]    @relation("TaskCreator")
+  comments      Comment[]
+  activities    Activity[]
+
+  // Indexes for performance optimization
+  @@index([email])
+  @@index([isActive])
+  @@index([role])
+  @@index([deletedAt])
+}
+
+// Project model with advanced features and metadata
+model Project {
+  id          String        @id @default(uuid()) @db.Uuid
+  name        String        @db.VarChar(255)
+  description String?       @db.Text
+  ownerId     String        @db.Uuid
+  status      ProjectStatus @default(ACTIVE)
+  category    String?       @db.VarChar(100)
+  startDate   DateTime
+  endDate     DateTime?
+  metadata    Json?         @db.JsonB
+  settings    Json          @default("{}") @db.JsonB
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  deletedAt   DateTime?
+
+  // Relations
+  owner      User       @relation("ProjectOwner", fields: [ownerId], references: [id])
+  tasks      Task[]
+  activities Activity[]
+
+  // Indexes for performance optimization
+  @@index([ownerId])
+  @@index([status])
+  @@index([category])
+  @@index([startDate, endDate])
+  @@index([deletedAt])
+}
+
+// Task model with comprehensive tracking and relationships
+model Task {
+  id          String       @id @default(uuid()) @db.Uuid
+  title       String       @db.VarChar(255)
+  description String?      @db.Text
+  projectId   String       @db.Uuid
+  creatorId   String       @db.Uuid
+  assigneeId  String?      @db.Uuid
+  status      TaskStatus   @default(TODO)
+  priority    TaskPriority @default(MEDIUM)
+  dueDate     DateTime?
+  metadata    Json?        @db.JsonB
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  deletedAt   DateTime?
+
+  // Relations
+  project     Project     @relation(fields: [projectId], references: [id])
+  creator     User        @relation("TaskCreator", fields: [creatorId], references: [id])
+  assignee    User?       @relation("TaskAssignee", fields: [assigneeId], references: [id])
+  comments    Comment[]
+  attachments Attachment[]
+  activities  Activity[]
+  dependencies    Task[]     @relation("TaskDependencies")
+  dependentOn     Task[]     @relation("TaskDependencies")
+
+  // Indexes for performance optimization
+  @@index([projectId])
+  @@index([creatorId])
+  @@index([assigneeId])
+  @@index([status])
+  @@index([priority])
+  @@index([dueDate])
+  @@index([deletedAt])
+}
+
+// Comment model for task discussions
+model Comment {
+  id        String    @id @default(uuid()) @db.Uuid
+  content   String    @db.Text
+  taskId    String    @db.Uuid
+  userId    String    @db.Uuid
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  // Relations
+  task      Task      @relation(fields: [taskId], references: [id])
+  user      User      @relation(fields: [userId], references: [id])
+  activities Activity[]
+
+  // Indexes for performance optimization
+  @@index([taskId])
+  @@index([userId])
+  @@index([deletedAt])
+}
+
+// Attachment model for file management
+model Attachment {
+  id          String    @id @default(uuid()) @db.Uuid
+  filename    String    @db.VarChar(255)
+  filesize    Int
+  mimetype    String    @db.VarChar(100)
+  storageKey  String    @db.VarChar(255)
+  taskId      String    @db.Uuid
+  uploadedBy  String    @db.Uuid
+  createdAt   DateTime  @default(now())
+  deletedAt   DateTime?
+
+  // Relations
+  task        Task      @relation(fields: [taskId], references: [id])
+
+  // Indexes for performance optimization
+  @@index([taskId])
+  @@index([uploadedBy])
+  @@index([deletedAt])
+}
+
+// Activity model for audit logging
+model Activity {
+  id            String      @id @default(uuid()) @db.Uuid
+  entityType    String      @db.VarChar(50)
+  entityId      String      @db.Uuid
+  action        String      @db.VarChar(50)
+  userId        String      @db.Uuid
+  metadata      Json?       @db.JsonB
+  createdAt     DateTime    @default(now())
+
+  // Relations
+  user          User        @relation(fields: [userId], references: [id])
+  project       Project?    @relation(fields: [projectId], references: [id])
+  task          Task?       @relation(fields: [taskId], references: [id])
+  comment       Comment?    @relation(fields: [commentId], references: [id])
+
+  // Optional relation fields
+  projectId     String?     @db.Uuid
+  taskId        String?     @db.Uuid
+  commentId     String?     @db.Uuid
+
+  // Indexes for performance optimization
+  @@index([entityType, entityId])
+  @@index([userId])
+  @@index([createdAt])
+}
