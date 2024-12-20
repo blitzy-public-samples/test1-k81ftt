@@ -1,0 +1,234 @@
+# Enterprise-grade CI workflow for Task Management System
+# Version: 1.0.0
+name: Continuous Integration
+
+# Trigger configuration with enhanced security considerations
+on:
+  push:
+    branches: [ main, develop, 'feature/**', 'release/**' ]
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+  pull_request:
+    branches: [ main, develop ]
+  workflow_dispatch:
+  schedule:
+    - cron: '0 0 * * *' # Daily security scans
+
+# Concurrency control to prevent redundant runs
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+# Minimal required permissions following principle of least privilege
+permissions:
+  contents: read
+  packages: write
+  security-events: write
+  id-token: write
+
+env:
+  NODE_VERSION: '20.x'
+  PNPM_VERSION: '8.x'
+  DOCKER_VERSION: '24.0'
+  NODE_ENV: 'test'
+  AZURE_CONTAINER_REGISTRY: ${{ secrets.ACR_REGISTRY }}
+
+jobs:
+  backend-ci:
+    name: Backend CI
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          lfs: true
+          
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+          
+      - name: Install pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: ${{ env.PNPM_VERSION }}
+          
+      - name: Cache dependencies
+        uses: actions/cache@v3
+        with:
+          path: '**/node_modules'
+          key: ${{ runner.os }}-modules-${{ hashFiles('**/pnpm-lock.yaml') }}
+          
+      - name: Install dependencies
+        working-directory: src/backend
+        run: |
+          pnpm install --frozen-lockfile
+          pnpm security:audit
+          
+      - name: Type checking
+        working-directory: src/backend
+        run: pnpm tsc --noEmit
+        
+      - name: Lint code
+        working-directory: src/backend
+        run: pnpm lint
+        
+      - name: Run unit tests
+        working-directory: src/backend
+        run: |
+          pnpm test:unit --coverage --ci
+        env:
+          JEST_JUNIT_OUTPUT_DIR: ./coverage/junit
+          
+      - name: Run integration tests
+        working-directory: src/backend
+        run: pnpm test:integration
+        
+      - name: Build application
+        working-directory: src/backend
+        run: pnpm build
+        
+      - name: Build and scan Docker image
+        uses: docker/build-push-action@v4
+        with:
+          context: ./src/backend
+          push: false
+          tags: ${{ env.AZURE_CONTAINER_REGISTRY }}/backend:${{ github.sha }}
+          cache-from: type=registry,ref=${{ env.AZURE_CONTAINER_REGISTRY }}/backend:latest
+          cache-to: type=inline
+          
+  frontend-ci:
+    name: Frontend CI
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+          
+      - name: Install pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: ${{ env.PNPM_VERSION }}
+          
+      - name: Cache dependencies
+        uses: actions/cache@v3
+        with:
+          path: '**/node_modules'
+          key: ${{ runner.os }}-modules-${{ hashFiles('**/pnpm-lock.yaml') }}
+          
+      - name: Install dependencies
+        working-directory: src/web
+        run: |
+          pnpm install --frozen-lockfile
+          
+      - name: Type checking
+        working-directory: src/web
+        run: pnpm typecheck
+        
+      - name: Lint code
+        working-directory: src/web
+        run: pnpm lint
+        
+      - name: Run unit tests
+        working-directory: src/web
+        run: |
+          pnpm test --coverage --ci
+        env:
+          JEST_JUNIT_OUTPUT_DIR: ./coverage/junit
+          
+      - name: Build application
+        working-directory: src/web
+        run: pnpm build
+        
+      - name: Build and scan Docker image
+        uses: docker/build-push-action@v4
+        with:
+          context: ./src/web
+          push: false
+          tags: ${{ env.AZURE_CONTAINER_REGISTRY }}/frontend:${{ github.sha }}
+          cache-from: type=registry,ref=${{ env.AZURE_CONTAINER_REGISTRY }}/frontend:latest
+          cache-to: type=inline
+
+  security-scan:
+    name: Security Scanning
+    needs: [backend-ci, frontend-ci]
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        
+      - name: SonarQube Scan
+        uses: sonarsource/sonarqube-scan-action@v1
+        with:
+          args: >
+            -Dsonar.projectKey=task-management
+            -Dsonar.sources=src
+            -Dsonar.coverage.exclusions=**/*.test.ts,**/*.spec.ts
+            -Dsonar.javascript.lcov.reportPaths=coverage/lcov.info
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+          
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@v0.11.0
+        with:
+          image-ref: '${{ env.AZURE_CONTAINER_REGISTRY }}/backend:${{ github.sha }}'
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+          severity: 'CRITICAL,HIGH'
+          
+      - name: Upload security results
+        uses: github/codeql-action/upload-sarif@v2
+        with:
+          sarif_file: 'trivy-results.sarif'
+          category: 'trivy'
+
+  quality-gate:
+    name: Quality Gate
+    needs: [security-scan]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check quality gate status
+        run: |
+          if [ "${{ needs.security-scan.result }}" != "success" ]; then
+            echo "Security scan failed"
+            exit 1
+          fi
+          
+      - name: Verify test coverage
+        run: |
+          COVERAGE_THRESHOLD=80
+          ACTUAL_COVERAGE=$(jq -r '.total.lines.pct' coverage/coverage-summary.json)
+          if (( $(echo "$ACTUAL_COVERAGE < $COVERAGE_THRESHOLD" | bc -l) )); then
+            echo "Test coverage ($ACTUAL_COVERAGE%) is below threshold ($COVERAGE_THRESHOLD%)"
+            exit 1
+          fi
+
+  notify:
+    name: Send Notifications
+    needs: [quality-gate]
+    runs-on: ubuntu-latest
+    if: always()
+    steps:
+      - name: Notify Slack on failure
+        if: failure()
+        uses: slackapi/slack-github-action@v1
+        with:
+          channel-id: 'ci-notifications'
+          slack-message: 'CI pipeline failed for ${{ github.repository }}@${{ github.ref }}'
+        env:
+          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
