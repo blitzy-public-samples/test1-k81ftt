@@ -1,0 +1,68 @@
+# apiVersion: v1 - Kubernetes Core API
+# Resource quotas for task management system namespace
+# Ensures fair resource allocation and prevents resource exhaustion
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: taskmanagement-quota
+  namespace: taskmanagement
+  labels:
+    app.kubernetes.io/name: taskmanagement
+    app.kubernetes.io/part-of: task-management-system
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/component: resource-quota
+
+spec:
+  hard:
+    # Compute Resources
+    # CPU requests total (accommodates all services with scaling buffer)
+    # Frontend: 1.0 CPU * 3 replicas = 3.0
+    # API Services: 2.0 CPU * 2 replicas = 4.0
+    # Analytics: 1.0 CPU * 1 replica = 1.0
+    requests.cpu: "8"
+    
+    # Memory requests total
+    # Frontend: 1Gi * 3 replicas = 3Gi
+    # API Services: 2Gi * 2 replicas = 4Gi
+    # Analytics: 4Gi * 1 replica = 4Gi
+    # Buffer: 5Gi
+    requests.memory: "16Gi"
+    
+    # CPU limits with overhead buffer
+    # Set to 2x requests to allow for bursting
+    limits.cpu: "16"
+    
+    # Memory limits with overhead buffer
+    # Set to 2x requests to prevent OOM issues
+    limits.memory: "32Gi"
+    
+    # Storage Resources
+    # Includes space for persistent volumes, logs, and backups
+    requests.storage: "100Gi"
+    
+    # Kubernetes Object Quotas
+    # PVCs for databases, file storage, and other persistent needs
+    persistentvolumeclaims: "10"
+    
+    # Pod quota accommodates all services with scaling
+    # Frontend: 3 pods
+    # API Services: 4 pods
+    # Analytics: 2 pods
+    # Background Jobs: 3 pods
+    # Buffer: 38 pods
+    pods: "50"
+    
+    # Service quotas for internal and external endpoints
+    services: "20"
+    
+    # Config and secret quotas for application configuration
+    configmaps: "30"
+    secrets: "30"
+    
+    # Network resource quotas
+    # Limited number of load balancers and node ports for cost control
+    services.loadbalancers: "2"
+    services.nodeports: "5"
+    
+    # Controller quotas
+    replicationcontrollers: "20"
