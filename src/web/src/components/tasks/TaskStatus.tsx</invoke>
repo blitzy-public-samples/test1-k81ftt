@@ -1,0 +1,165 @@
+/**
+ * @fileoverview TaskStatus component for visualizing task states with accessibility support
+ * @version 1.0.0
+ * Implements Material Design principles and WCAG 2.1 Level AA compliance
+ */
+
+import React from 'react'; // ^18.0.0
+import { styled, useTheme } from '@mui/material/styles'; // ^5.0.0
+import { Chip } from '@mui/material'; // ^5.0.0
+import { TaskStatus } from '../../types/task.types';
+import Icon from '../common/Icon';
+
+// Styled Chip component with enhanced accessibility and theme support
+const StyledChip = styled(Chip)(({ theme }) => ({
+  '&.MuiChip-root': {
+    transition: theme.transitions.create(['background-color', 'box-shadow'], {
+      duration: theme.transitions.duration.short,
+    }),
+    fontWeight: 500,
+    textTransform: 'none',
+    letterSpacing: '0.01em',
+  },
+  '&.MuiChip-clickable:hover': {
+    boxShadow: theme.shadows[2],
+  },
+  '&.MuiChip-clickable:focus-visible': {
+    outline: `2px solid ${theme.palette.primary.main}`,
+    outlineOffset: '2px',
+  },
+  '@media (prefers-reduced-motion: reduce)': {
+    transition: 'none',
+  },
+}));
+
+// Interface for component props
+interface TaskStatusProps {
+  /** Current status of the task */
+  status: TaskStatus;
+  /** Size of the status chip */
+  size?: 'small' | 'medium';
+  /** Optional CSS class name */
+  className?: string;
+  /** Optional click handler for status changes */
+  onClick?: (status: TaskStatus) => void;
+  /** Optional disabled state */
+  disabled?: boolean;
+  /** Optional tab index for keyboard navigation */
+  tabIndex?: number;
+}
+
+// Status configuration with accessibility support
+const STATUS_CONFIG = {
+  [TaskStatus.TODO]: {
+    icon: 'circle_outline',
+    color: 'default',
+    label: 'To Do',
+    ariaLabel: 'Task status: To Do',
+  },
+  [TaskStatus.IN_PROGRESS]: {
+    icon: 'hourglass_empty',
+    color: 'primary',
+    label: 'In Progress',
+    ariaLabel: 'Task status: In Progress',
+  },
+  [TaskStatus.IN_REVIEW]: {
+    icon: 'rate_review',
+    color: 'info',
+    label: 'In Review',
+    ariaLabel: 'Task status: In Review',
+  },
+  [TaskStatus.BLOCKED]: {
+    icon: 'error_outline',
+    color: 'error',
+    label: 'Blocked',
+    ariaLabel: 'Task status: Blocked',
+  },
+  [TaskStatus.COMPLETED]: {
+    icon: 'check_circle',
+    color: 'success',
+    label: 'Completed',
+    ariaLabel: 'Task status: Completed',
+  },
+} as const;
+
+/**
+ * Gets theme-aware configuration for status visualization
+ * @param status - Current task status
+ * @param theme - Material UI theme object
+ */
+const getStatusConfig = (status: TaskStatus, theme: any) => {
+  const config = STATUS_CONFIG[status];
+  const isLight = theme.palette.mode === 'light';
+
+  return {
+    ...config,
+    backgroundColor: theme.palette[config.color]?.[isLight ? 50 : 900],
+    color: theme.palette[config.color]?.[isLight ? 700 : 200],
+    iconColor: theme.palette[config.color]?.[isLight ? 500 : 300],
+  };
+};
+
+/**
+ * TaskStatus component for displaying task status with accessibility support
+ * Implements WCAG 2.1 Level AA compliance and Material Design principles
+ */
+const TaskStatus = React.memo<TaskStatusProps>(({
+  status,
+  size = 'medium',
+  className,
+  onClick,
+  disabled = false,
+  tabIndex,
+}) => {
+  const theme = useTheme();
+  const config = getStatusConfig(status, theme);
+  const isRTL = theme.direction === 'rtl';
+
+  // Handle keyboard interaction
+  const handleKeyPress = React.useCallback((event: React.KeyboardEvent) => {
+    if (onClick && (event.key === 'Enter' || event.key === ' ')) {
+      event.preventDefault();
+      onClick(status);
+    }
+  }, [onClick, status]);
+
+  return (
+    <StyledChip
+      icon={
+        <Icon
+          name={config.icon}
+          size={size}
+          color={config.iconColor}
+          aria-hidden="true"
+        />
+      }
+      label={config.label}
+      size={size}
+      className={className}
+      onClick={onClick ? () => onClick(status) : undefined}
+      onKeyPress={handleKeyPress}
+      disabled={disabled}
+      tabIndex={tabIndex}
+      role={onClick ? 'button' : 'status'}
+      aria-label={config.ariaLabel}
+      sx={{
+        backgroundColor: config.backgroundColor,
+        color: config.color,
+        direction: isRTL ? 'rtl' : 'ltr',
+        '& .MuiChip-icon': {
+          marginLeft: isRTL ? 'auto' : undefined,
+          marginRight: isRTL ? undefined : 'auto',
+          order: isRTL ? 1 : -1,
+        },
+      }}
+    />
+  );
+});
+
+// Display name for debugging
+TaskStatus.displayName = 'TaskStatus';
+
+export default TaskStatus;
+
+// Type exports for consumers
+export type { TaskStatusProps };
