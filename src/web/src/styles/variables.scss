@@ -1,0 +1,163 @@
+// =============================================================================
+// DESIGN SYSTEM VARIABLES
+// Material Design 3 Implementation
+// Version: 1.0.0
+// =============================================================================
+
+// -----------------------------------------------------------------------------
+// BREAKPOINTS
+// Mobile-first responsive design breakpoints
+// -----------------------------------------------------------------------------
+$breakpoints: (
+  xs: 320px,  // Mobile portrait
+  sm: 768px,  // Tablet portrait
+  md: 1024px, // Tablet landscape
+  lg: 1440px, // Desktop
+  xl: 1920px  // Large desktop
+);
+
+// -----------------------------------------------------------------------------
+// SPACING SYSTEM
+// Base 8px grid system with golden ratio scaling
+// -----------------------------------------------------------------------------
+$spacing-base: 8px;
+$spacing-scale: (
+  xs: 0.25,   // 2px
+  sm: 0.5,    // 4px
+  md: 1,      // 8px
+  lg: 1.5,    // 12px
+  xl: 2       // 16px
+);
+
+$max-content-width: 1440px;
+$golden-ratio: 1.618;
+
+// -----------------------------------------------------------------------------
+// TYPOGRAPHY
+// System fonts with fallbacks and fluid typography base
+// -----------------------------------------------------------------------------
+$font-family-base: 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI',
+  'Helvetica Neue', Arial, sans-serif;
+$font-size-base: 16px;
+$line-height-base: 1.5;
+
+// -----------------------------------------------------------------------------
+// SHAPE
+// Border radius and other shape tokens
+// -----------------------------------------------------------------------------
+$border-radius-base: 4px;
+
+// -----------------------------------------------------------------------------
+// MOTION
+// Animation and transition tokens
+// -----------------------------------------------------------------------------
+$transition-duration: 0.2s;
+$animation-curves: (
+  standard: cubic-bezier(0.2, 0, 0, 1),
+  decelerate: cubic-bezier(0, 0, 0.2, 1),
+  accelerate: cubic-bezier(0.4, 0, 1, 1)
+);
+
+// -----------------------------------------------------------------------------
+// THEME COLORS
+// Light and dark theme color tokens following M3 color system
+// -----------------------------------------------------------------------------
+$theme-colors: (
+  light: (
+    surface: #FFFFFF,
+    on-surface: #1C1B1F,
+    surface-variant: #E7E0EC,
+    on-surface-variant: #49454E
+  ),
+  dark: (
+    surface: #1C1B1F,
+    on-surface: #E6E1E5,
+    surface-variant: #49454E,
+    on-surface-variant: #CAC4D0
+  )
+);
+
+// -----------------------------------------------------------------------------
+// HIGH CONTRAST THEME
+// Accessibility-focused high contrast color tokens
+// -----------------------------------------------------------------------------
+$high-contrast-colors: (
+  background: #000000,
+  foreground: #FFFFFF,
+  accent: #FFE600
+);
+
+// -----------------------------------------------------------------------------
+// ELEVATION
+// Shadow tokens for elevation levels
+// -----------------------------------------------------------------------------
+$elevation-tokens: (
+  level-0: none,
+  level-1: 0 1px 2px rgba(0,0,0,0.3),
+  level-2: 0 1px 2px rgba(0,0,0,0.3), 0 1px 3px 1px rgba(0,0,0,0.15),
+  level-3: 0 1px 3px rgba(0,0,0,0.3), 0 4px 8px 3px rgba(0,0,0,0.15)
+);
+
+// -----------------------------------------------------------------------------
+// STATE
+// Interactive state opacity tokens
+// -----------------------------------------------------------------------------
+$state-colors: (
+  hover-opacity: 0.08,
+  focus-opacity: 0.12,
+  pressed-opacity: 0.12,
+  disabled-opacity: 0.38
+);
+
+// -----------------------------------------------------------------------------
+// Z-INDEX
+// Layering system tokens
+// -----------------------------------------------------------------------------
+$z-index-tokens: (
+  modal: 1000,
+  overlay: 900,
+  drawer: 800,
+  header: 700,
+  dropdown: 600
+);
+
+// -----------------------------------------------------------------------------
+// FUNCTIONS
+// Utility functions for spacing and typography calculations
+// -----------------------------------------------------------------------------
+
+// Calculate spacing based on base unit and scale
+@function spacing($size) {
+  @if map-has-key($spacing-scale, $size) {
+    $scale: map-get($spacing-scale, $size);
+    @return $spacing-base * $scale;
+  }
+  @error "Invalid spacing size: #{$size}";
+}
+
+// Calculate fluid typography size
+@function fluid-type($min-size, $max-size) {
+  $min-vw: map-get($breakpoints, 'xs');
+  $max-vw: map-get($breakpoints, 'lg');
+  
+  @return clamp(
+    #{$min-size}px,
+    calc(#{$min-size}px + (#{$max-size} - #{$min-size}) * ((100vw - #{$min-vw}) / (#{$max-vw} - #{$min-vw}))),
+    #{$max-size}px
+  );
+}
+
+// -----------------------------------------------------------------------------
+// EXPORTS
+// Make variables available for importing in other files
+// -----------------------------------------------------------------------------
+:export {
+  breakpoints: $breakpoints;
+  spacing-base: $spacing-base;
+  spacing-scale: $spacing-scale;
+  max-content-width: $max-content-width;
+  golden-ratio: $golden-ratio;
+  font-family-base: $font-family-base;
+  font-size-base: $font-size-base;
+  line-height-base: $line-height-base;
+}
